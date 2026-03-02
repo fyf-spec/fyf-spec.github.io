@@ -11,9 +11,18 @@ export default defineConfig({
     nav: [
       { text: "首页", link: "/" },
       { text: "HPC", link: "/hpc/memory-bandwidth" },
+      { text: "Algorithm", link: "/algorithm-design-and-analysis/lecture1" },
       { text: "CS 336", link: "/CS336/lecture1" }
     ],
     sidebar: {
+      "/algorithm-design-and-analysis/": [
+        {
+          text: "Algorithm Design and Analysis",
+          items: [
+            { text: "Lecture 1: Turing Machine & Decidability", link: "/algorithm-design-and-analysis/lecture1" }
+          ]
+        }
+      ],
       "/hpc/": [
         {
           text: "HPC",
@@ -31,7 +40,8 @@ export default defineConfig({
             { text: "Lecture 2: Resource Accounting", link: "/CS336/lecture2" },
             { text: "Lecture 3: Architecture & Hyperparams", link: "/CS336/lecture3" },
             { text: "Lecture 7: Parallelize Basics", link: "/CS336/lecture7" },
-            { text: "Lecture 9: Scaling Laws 1", link: "/CS336/lecture9" }
+            { text: "Lecture 9: Scaling Laws 1", link: "/CS336/lecture9" },
+            { text: "Lecture 10: Inference", link: "/CS336/lecture10" }
           ]
         },
         {
