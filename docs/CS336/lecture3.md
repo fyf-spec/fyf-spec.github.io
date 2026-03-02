@@ -29,7 +29,7 @@
 > [!IMPORTANT] 
 > **稳定性差异**：Pre-norm 允许梯度更直接地通过恒等路径（Identity Path）传播，显著提高了训练的鲁棒性，减少了对精细 Learning Rate Warmup 的依赖。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260215092402207.png" alt="Pre/Post-norm" style="zoom:67%;" />
+<img src="./images/image-20260215092402207.png" alt="Pre/Post-norm" style="zoom:67%;" />
 
 ### LayerNorm vs RMSNorm
 
@@ -39,7 +39,7 @@
 > [!TIP]
 > **效率优势**：RMSNorm 减少了约 40% 的归一化计算量，且因为去除了均值计算，减少了同步和数据移动开销。现代模型通常采用 **Bias-free** 架构，即移除所有线性层和 Norm 层的偏置项（$\beta$）。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260215164340604.png" alt="RMSNorm" style="zoom:60%;" />
+<img src="./images/image-20260215164340604.png" alt="RMSNorm" style="zoom:60%;" />
 
 ## 激活函数演进 (Activation Functions)
 
@@ -59,7 +59,7 @@ $$\text{GeLU}(x) := x \Phi(x)$$
 | **GeGLU**  | $(\text{GELU}(xW) \otimes xV)W_2$    | 早期被广泛探索           |
 
 > [!IMPORTANT]
-> **计算代价**：使用 GLU 变体时，通常需要将 FFN 的隐藏层维度进行调整（如缩小为原来的 2/3），以保持与普通 ReLU FFN 相同的总参数量和计算量。
+> **计算代价**：使用 GLU 变体时，通常需要将 FFN 的隐藏层维度进行调整（如缩小为原来的 2/3），以保持与普通 ReLU FFN 相同的总参数量 and 计算量。
 
 ## 位置编码与层排列
 
@@ -67,7 +67,7 @@ $$\text{GeLU}(x) := x \Phi(x)$$
 
 为了进一步提升硬件利用率，一些模型开始尝试并联结构：
 
-```
+```mermaid
 graph TD
     Input[Input x] --> Norm[RMSNorm]
     Norm --> Attn[Attention]
@@ -84,7 +84,7 @@ graph TD
 - **Absolute**: 绝对位置编码。
 - **RoPE (Rotary Positional Embedding)**：通过旋转矩阵将位置信息注入。具备良好的**相对位置感应**和**长度外推性**。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260215224111053.png" alt="Parallel layers" style="zoom:80%;" />
+<img src="./images/image-20260215224111053.png" alt="Parallel layers" style="zoom:80%;" />
 
 ## Part 4: 超参数配置与缩放定律 (Hyperparameters)
 
@@ -100,7 +100,7 @@ graph TD
 >
 > - 增加深度通常比增加宽度带来更持久的 Loss 下降，但会增加推理延迟和优化难度。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260218212637890.png" alt="Aspect Ratio" style="zoom: 50%;" />
+<img src="./images/image-20260218212637890.png" alt="Aspect Ratio" style="zoom: 50%;" />
 
 ## 训练稳定性技巧
 
@@ -111,7 +111,7 @@ graph TD
 > [!WARNING]
 > **风险因素**：Softmax 后的值过大、权重初始化不当、或者混合精度训练中的溢出都是潜在诱因。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260218215610080.png" alt="Training Stability" style="zoom:50%;" />
+<img src="./images/image-20260218215610080.png" alt="Training Stability" style="zoom:50%;" />
 
 - **权重衰减 (Weight Decay)**：现代模型依然使用，它能抑制权重过快增长，维持模型的动态范围。
 - **Softmax Variance**: 控制 Attention 分数的缩放比例（$1/\sqrt{d_k}$）是维持稳定性的关键。

@@ -47,7 +47,7 @@
 
 相比传统的转置与矩阵乘法，`einsum` 能够自动处理维度的求和与广播。
 
-```
+```python
 x: Float[torch.Tensor, "batch seq1 hidden"] = torch.ones(2,3,4)
 y: Float[torch.Tensor, "batch seq2 hidden"] = torch.ones(2,3,4)
 
@@ -66,7 +66,7 @@ z = einsum(x, y, "... seq1 hidden, ... seq2 hidden -> ... seq1 seq2")
 
 `reduce` 可以直接对指定维度进行聚合操作（如 mean, sum, max）。
 
-```
+```python
 x: Float[torch.Tensor, "batch seq hidden"] = torch.ones(2,3,4)
 
 # 传统方式
@@ -80,7 +80,7 @@ y = reduce(x, "... hidden -> ...", "mean")
 
 这是 einops 最强大的功能，可以直观地处理维度的拆分与合并。
 
-```
+```python
 x: Float[torch.Tensor, "batch seq1 total_hidden"] = torch.ones(2,3,8)
 w: Float[torch.Tensor, "hidden1 hidden2"] = torch.ones(4,4)
 
@@ -115,7 +115,7 @@ $$\text{actual\_time} = \frac{\text{FLOPs\_needed}}{\text{FLOPS (Peak)}}$$
   - 定义：$mfu = \frac{\text{actual\_flop\_per\_sec}}{\text{promised\_flop\_per\_sec}}$
   - 经验值：MFU $\ge 0.5$ 被视为非常优秀，通信开销和内存墙是主要的性能限制。
 
-<img src="C:\Users\Lenovo\AppData\Roaming\Typora\typora-user-images\image-20260214161756866.png" alt="Hardware Performance Data" style="zoom:60%;" />
+<img src="./images/image-20260214161756866.png" alt="Hardware Performance Data" style="zoom:60%;" />
 
 ### 梯度反向传播 (Gradients FLOPs)
 
@@ -138,7 +138,7 @@ $$\text{Total FLOPs} = 6 \times (\# \text{tokens}) \times (\# \text{parameters})
 
 为了防止输出在多层叠加后数值爆炸或消失，通常使用 **Xavier 初始化**（或其他缩放方案）：
 
-```
+```python
 w = nn.Parameter(torch.randn(input_dim, hidden_dim) / np.sqrt(input_dim))
 ```
 
@@ -146,7 +146,7 @@ w = nn.Parameter(torch.randn(input_dim, hidden_dim) / np.sqrt(input_dim))
 
 在训练结束后，可以通过设置 `set_to_none=True` 来释放梯度占用的显存：
 
-```
+```python
 optimizer.zero_grad(set_to_none=True)
 ```
 

@@ -126,7 +126,7 @@ ZeRO (Zero Redundancy Optimizer) 的核心思想是 **分片 (Sharding)**。
 
 ### 训练方案选择逻辑
 
-```
+```mermaid
 flowchart TD
     A[训练大规模模型] --> B{模型能塞入单卡显存?}
     B -- Yes --> C[使用 ZeRO-1/DP 扩展算力]
@@ -151,4 +151,3 @@ flowchart TD
 - **内存受限**：优先用 ZeRO-3 或 PP。
 - **带宽受限**：优先用 PP，避免在跨机链路用 TP。
 - **Batch Size 小**：PP 会带来严重的气泡，应增加梯度累加。
-
