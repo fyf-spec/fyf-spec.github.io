@@ -1,11 +1,5 @@
 # CS 336 Lecture 1: 绪论与分词 (Introduction and Tokenization)
 
-## 目录
-
-- [1. 语言模型架构 (Architecture)](#1-语言模型架构-architecture)
-- [2. 训练流程 (Training)](#2-训练流程-training)
-- [3. 分词技术 (Tokenization)](#3-分词技术-tokenization)
-
 ## 1. 语言模型架构 (Architecture)
 
 大语言模型（LLM）的性能不仅取决于规模，还取决于架构组件的选择。以下是当前主流架构的组成部分：
@@ -92,7 +86,7 @@ BPE 示例：
 
 Tokenization 的效率可以用压缩比来衡量：
 
-$false\text{Compression Ratio} = \frac{\text{原始总字节数 (Bytes)}}{\text{分词后的 Token 数 (Tokens)}}$false
+$$\text{Compression Ratio} = \frac{\text{原始总字节数 (Bytes)}}{\text{分词后的 Token 数 (Tokens)}}$$
 
 词表越大，通常压缩比越高，模型处理相同内容所需的序列长度就越短。
 

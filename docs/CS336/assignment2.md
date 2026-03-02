@@ -2,28 +2,6 @@
 
 # FlashAttention & Distributed Data Parallel 笔记
 
-## 目录
-
-- [Part 1: FlashAttention](#part-1-flashattention)
-  - [1.1 标准 Attention 的瓶颈](#11-标准-attention-的瓶颈)
-  - [1.2 FlashAttention-2 Forward (PyTorch)](#12-flashattention-2-forward-pytorch)
-  - [1.3 FlashAttention-2 Forward (Triton Kernel)](#13-flashattention-2-forward-triton-kernel)
-  - [1.4 FlashAttention-2 Backward](#14-flashattention-2-backward)
-- [Part 2: Distributed Data Parallel (DDP)](#part-2-distributed-data-parallel-ddp)
-  - [2.1 DDP 的基本原理](#21-ddp-的基本原理)
-  - [2.2 Naive DDP — 逐参数同步](#22-naive-ddp--逐参数同步)
-  - [2.3 Flat All-Reduce — 减少通信调用次数](#23-flat-all-reduce--减少通信调用次数)
-  - [2.4 Overlapping — 通信与计算重叠](#24-overlapping--通信与计算重叠)
-  - [2.5 Bucketed DDP — 两全其美](#25-bucketed-ddp--两全其美)
-  - [2.6 DDP 通信开销建模](#26-ddp-通信开销建模)
-- [Benchmark 汇总](#benchmark-汇总)
-- [Part 3: Optimizer State Sharding (ZeRO-1)](#part-3-optimizer-state-sharding-zero-1)
-  - [3.1 为什么需要 Optimizer Sharding](#31-为什么需要-optimizer-sharding)
-  - [3.2 实现原理](#32-实现原理)
-  - [3.3 Benchmark 内存与速度权衡](#33-benchmark-内存与速度权衡)
-
----
-
 ## Part 1: FlashAttention
 
 ### 1.1 标准 Attention 的瓶颈

@@ -1,0 +1,16 @@
+.language-mermaid .vp-mermaid {
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+
+.language-mermaid .vp-mermaid svg {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.language-mermaid .vp-mermaid-error {
+  margin: 0;
+  overflow-x: auto;
+}

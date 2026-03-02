@@ -1,24 +1,5 @@
 # Lecture 7 Parallelize basics
 
-## 目录
-
-- [网络与集合通信基础](#网络与集合通信基础)
-  - [单 GPU 的局限性](#单-gpu-的局限性)
-  - [集合通信原语 (Collective Communication)](#集合通信原语-collective-communication)
-- [数据并行 (Data Parallelism)](#数据并行-data-parallelism)
-  - [朴素数据并行 (Naïve DP)](#朴素数据并行-naïve-dp)
-  - [ZeRO 系列：消除内存冗余](#zero-系列消除内存冗余)
-  - [ZeRO 各阶段内存记账](#zero-各阶段内存记账)
-- [模型并行 (Model Parallelism)](#模型并行-model-parallelism)
-  - [流水线并行 (Pipeline Parallel, PP)](#流水线并行-pipeline-parallel-pp)
-  - [张量并行 (Tensor Parallel, TP)](#张量并行-tensor-parallel-tp)
-  - [序列并行 (Sequence Parallel, SP)](#序列并行-sequence-parallel-sp)
-- [激活显存与重计算](#激活显存与重计算)
-- [3D 并行策略与实战](#3d-并行策略与实战)
-  - [训练方案选择逻辑](#训练方案选择逻辑)
-  - [Llama 3 405B 的实战配置 (16384 GPUs)](#llama-3-405b-的实战配置-16384-gpus)
-  - [总结：资源平衡](#总结资源平衡)
-
 ## 网络与集合通信基础
 
 ### 单 GPU 的局限性

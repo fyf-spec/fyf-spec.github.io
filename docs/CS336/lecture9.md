@@ -1,22 +1,5 @@
 # CS 336 Lecture 9: 缩放定律 1 (Scaling Laws 1)
 
-## 目录
-
-- [缩放定律概述 (Overview)](#缩放定律概述-overview)
-  - [缩放定律解决的核心命题](#缩放定律解决的核心命题)
-  - [Scaling Law 的维度](#scaling-law-的维度)
-- [数据缩放定律 (Data Scaling Law)](#数据缩放定律-data-scaling-law)
-  - [幂律分布与本征维度](#幂律分布与本征维度)
-  - [数据配比的影响](#数据配比的影响)
-- [模型缩放定律 (Model Scaling Law)](#模型缩放定律-model-scaling-law)
-  - [架构与优化器的选择](#架构与优化器的选择)
-  - [临界批大小 (Critical Batch Size)](#临界批大小-critical-batch-size)
-- [数据-模型联合缩放 (Joint Scaling Law)](#数据-模型联合缩放-joint-scaling-law)
-  - [Kaplan vs Rosenfeld 公式](#kaplan-vs-rosenfeld-公式)
-- [Chinchilla 比例与计算优化](#chinchilla-比例与计算优化)
-  - [Chinchilla Ratio: 1:20](#chinchilla-ratio-120)
-  - [拟合方法论](#拟合方法论)
-
 ## 缩放定律概述 (Overview)
 
 ### 缩放定律解决的核心命题

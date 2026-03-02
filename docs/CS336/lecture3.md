@@ -1,22 +1,5 @@
 # CS 336 Lecture 3: 架构与超参数 (Architecture and Hyperparameters)
 
-## 目录
-
-- [归一化与层结构 (Normalization and Layers)](#归一化与层结构-normalization-and-layers)
-  - [Pre-norm vs Post-norm](#pre-norm-vs-post-norm)
-  - [LayerNorm vs RMSNorm](#layernorm-vs-rmsnorm)
-- [激活函数演进 (Activation Functions)](#激活函数演进-activation-functions)
-  - [GELU 与门控机制](#gelu-与门控机制)
-  - [SwiGLU 的崛起](#swiglu-的崛起)
-- [位置编码与层排列](#位置编码与层排列)
-  - [串联与并联层 (Serial vs Parallel)](#串联与并联层-serial-vs-parallel)
-  - [位置嵌入 (Positional Embeddings)](#位置嵌入-positional-embeddings)
-- [Part 4: 超参数配置与缩放定律 (Hyperparameters)](#part-4-超参数配置与缩放定律-hyperparameters)
-  - [维度配比与头数](#维度配比与头数)
-  - [深度与宽度的权衡 (Aspect Ratio)](#深度与宽度的权衡-aspect-ratio)
-- [训练稳定性技巧](#训练稳定性技巧)
-  - [避免 Spikes (训练崩溃)](#避免-spikes-训练崩溃)
-
 ## 归一化与层结构 (Normalization and Layers)
 
 ### Pre-norm vs Post-norm

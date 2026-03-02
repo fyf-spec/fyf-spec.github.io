@@ -1,28 +1,5 @@
 # Assignment 1: BPE Tokenizer & Transformer Basics
 
-## 目录
-
-- [Part 1: BPE Tokenizer](#part-1-bpe-tokenizer)
-  - [1.1 为什么需要 BPE？](#11-为什么需要-bpe)
-  - [1.2 BPE 训练流程](#12-bpe-训练流程)
-  - [1.3 Pre-tokenization 的作用与正则解析](#13-pre-tokenization-的作用与正则解析)
-  - [1.4 特殊 Token (Special Tokens)](#14-特殊-token-special-tokens)
-  - [1.5 BPE 实现细节 (Python 技巧)](#15-bpe-实现细节-python-技巧)
-  - [1.6 大文件内存优化 (Memory Mapping)](#16-大文件内存优化-memory-mapping)
-- [Part 2: Transformer 基础构建块 (nn.py)](#part-2-transformer-基础构建块-nnpy)
-  - [2.1 初始化策略 (Truncated Normal)](#21-初始化策略-truncated-normal)
-  - [2.2 线性层 (Linear) 与 einsum](#22-线性层-linear-与-einsum)
-  - [2.3 词嵌入层 (Embedding)](#23-词嵌入层-embedding)
-  - [2.4 RMSNorm (均方根层归一化)](#24-rmsnorm-均方根层归一化)
-- [Part 3: 激活函数与前馈网络 (FFN)](#part-3-激活函数与前馈网络-ffn)
-  - [3.1 SiLU (Swish) 激活函数](#31-silu-swish-激活函数)
-  - [3.2 SwiGLU 门控前馈网络](#32-swiglu-门控前馈网络)
-- [Part 4: 旋转位置编码 (RoPE)](#part-4-旋转位置编码-rope)
-  - [4.1 RoPE 的核心原理](#41-rope-的核心原理)
-  - [4.2 缓存与性能优化](#42-缓存与性能优化)
-
----
-
 ## Part 1: BPE Tokenizer
 
 ### 1.1 为什么需要 BPE？

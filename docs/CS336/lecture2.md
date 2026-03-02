@@ -1,22 +1,5 @@
 # CS 336 Lecture 2: PyTorch 与资源统计 (Resource Accounting)
 
-## 目录
-
-- [内存统计：数据类型 (Memory Counting: Datatypes)](#内存统计数据类型-memory-counting-datatypes)
-- [计算统计：Einops 库 (Compute Counting: Einops)](#计算统计einops-库-compute-counting-einops)
-  - [einsum：爱因斯坦求和约定](#einsum爱因斯坦求和约定)
-  - [reduce：张量降维](#reduce张量降维)
-  - [rearrange：维度变换与重塑](#rearrange维度变换与重塑)
-- [FLOPs 统计 (FLOPs Counting)](#flops-统计-flops-counting)
-  - [张量乘法的前向传播](#张量乘法的前向传播)
-  - [计算时间与利用率 (MFU)](#计算时间与利用率-mfu)
-  - [梯度反向传播 (Gradients FLOPs)](#梯度反向传播-gradients-flops)
-- [训练资源管理与优化](#训练资源管理与优化)
-  - [模型初始化 (Model Initialization)](#模型初始化-model-initialization)
-  - [优化器内存占用 (Optimizer Memory)](#优化器内存占用-optimizer-memory)
-  - [显存记账公式 (Memory Accounting)](#显存记账公式-memory-accounting)
-  - [精度选择策略](#精度选择策略)
-
 ## 内存统计：数据类型 (Memory Counting: Datatypes)
 
 在深度学习中，显存的占用很大程度上取决于所选用的数据类型（Precision）。

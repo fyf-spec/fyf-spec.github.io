@@ -4,6 +4,9 @@ export default defineConfig({
   title: "FYF Notes",
   description: "HPC 与 LLM 训练笔记",
   lang: "zh-CN",
+  markdown: {
+    math: true
+  },
   themeConfig: {
     nav: [
       { text: "首页", link: "/" },
