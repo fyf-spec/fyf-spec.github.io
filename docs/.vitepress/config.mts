@@ -12,7 +12,8 @@ export default defineConfig({
       { text: "首页", link: "/" },
       { text: "HPC", link: "/hpc/memory-bandwidth" },
       { text: "Algorithm", link: "/algorithm-design-and-analysis/lecture1" },
-      { text: "CS 336", link: "/CS336/lecture1" }
+      { text: "CS 336", link: "/CS336/lecture1" },
+      { text: "LeetCode", link: "/leetcode/169_MajorElement" }
     ],
     sidebar: {
       "/algorithm-design-and-analysis/": [
@@ -49,6 +50,15 @@ export default defineConfig({
           items: [
             { text: "Assignment 1", link: "/CS336/assignment1" },
             { text: "Assignment 2", link: "/CS336/assignment2" }
+          ]
+        }
+      ],
+      "/leetcode/": [
+        {
+          text: "LeetCode",
+          items: [
+            { text: "169. 多数元素", link: "/leetcode/169_MajorElement" },
+            { text: "189. 轮转数组", link: "/leetcode/189_Rotate" }
           ]
         }
       ]
