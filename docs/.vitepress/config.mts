@@ -20,7 +20,9 @@ export default defineConfig({
         {
           text: "Algorithm Design and Analysis",
           items: [
-            { text: "Lecture 1: Turing Machine & Decidability", link: "/algorithm-design-and-analysis/lecture1" }
+            { text: "Lecture 1: Turing Machine & Decidability", link: "/algorithm-design-and-analysis/lecture1" },
+            { text: "Lecture 2: Divide and Conquer and Running Time analysis", link: "/algorithm-design-and-analysis/lecture2" },
+
           ]
         }
       ],
