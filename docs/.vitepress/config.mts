@@ -22,7 +22,7 @@ export default defineConfig({
           items: [
             { text: "Lecture 1: Turing Machine & Decidability", link: "/algorithm-design-and-analysis/lecture1" },
             { text: "Lecture 2: Divide and Conquer and Running Time analysis", link: "/algorithm-design-and-analysis/lecture2" },
-
+            { text: "Lecture 3: Master Theorem", link: "/algorithm-design-and-analysis/lecture3" }
           ]
         }
       ],
@@ -51,7 +51,8 @@ export default defineConfig({
           text: "CS 336 Assignments",
           items: [
             { text: "Assignment 1", link: "/CS336/assignment1" },
-            { text: "Assignment 2", link: "/CS336/assignment2" }
+            { text: "Assignment 2", link: "/CS336/assignment2" },
+            { text: "Assignment 5", link: "/CS336/assignment5" }
           ]
         }
       ],
