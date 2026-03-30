@@ -23,7 +23,9 @@ export default defineConfig({
             { text: "Lecture 1: Turing Machine & Decidability", link: "/algorithm-design-and-analysis/lecture1" },
             { text: "Lecture 2: Divide and Conquer and Running Time analysis", link: "/algorithm-design-and-analysis/lecture2" },
             { text: "Lecture 3: Master Theorem", link: "/algorithm-design-and-analysis/lecture3" },
-            { text: "Lecture 4: FFT", link: "/algorithm-design-and-analysis/lecture4" }
+            { text: "Lecture 4: FFT", link: "/algorithm-design-and-analysis/lecture4" },
+            { text: "Lecture 5: Graph & SCC", link: "/algorithm-design-and-analysis/lecture5" },
+            { text: "Lecture 6: Shortest Path & Fibonacci Heap", link: "/algorithm-design-and-analysis/lecture6" }
           ]
         }
       ],
