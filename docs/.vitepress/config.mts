@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "FYF Notes",
-  description: "HPC 与 LLM 训练笔记",
+  description: "",
   lang: "zh-CN",
   markdown: {
     math: true
@@ -13,7 +13,9 @@ export default defineConfig({
       { text: "HPC", link: "/hpc/memory-bandwidth" },
       { text: "Algorithm", link: "/algorithm-design-and-analysis/lecture1" },
       { text: "CS 336", link: "/CS336/lecture1" },
-      { text: "LeetCode", link: "/leetcode/169_MajorElement" }
+      { text: "LeetCode", link: "/leetcode/169_MajorElement" },
+      { text: "CSAPP", link: "/csapp/Chapter3" },
+      { text: "Computer Networking", link: "/Computer Networking/Chapter1" }
     ],
     sidebar: {
       "/algorithm-design-and-analysis/": [
@@ -25,7 +27,8 @@ export default defineConfig({
             { text: "Lecture 3: Master Theorem", link: "/algorithm-design-and-analysis/lecture3" },
             { text: "Lecture 4: FFT", link: "/algorithm-design-and-analysis/lecture4" },
             { text: "Lecture 5: Graph & SCC", link: "/algorithm-design-and-analysis/lecture5" },
-            { text: "Lecture 6: Shortest Path & Fibonacci Heap", link: "/algorithm-design-and-analysis/lecture6" }
+            { text: "Lecture 6: Shortest Path & Fibonacci Heap", link: "/algorithm-design-and-analysis/lecture6" },
+            { text: "Lecture 7: Negative Weight Shortest Path & Bellman-Ford", link: "/algorithm-design-and-analysis/lecture7" }
           ]
         }
       ],
@@ -65,6 +68,24 @@ export default defineConfig({
           items: [
             { text: "169. 多数元素", link: "/leetcode/169_MajorElement" },
             { text: "189. 轮转数组", link: "/leetcode/189_Rotate" }
+          ]
+        }
+      ],
+      "/csapp/": [
+        {
+          text: "CSAPP",
+          items: [
+            { text: "第03章 计算机的算术运算 (lecture3)", link: "/csapp/lecture3" },
+            { text: "Chapter 3 程序的机器级表示", link: "/csapp/Chapter3" }
+          ]
+        }
+      ],
+      "/Computer Networking/": [
+        {
+          text: "Computer Networking",
+          items: [
+            { text: "第一章：计算机网络和因特网", link: "/Computer Networking/Chapter1" },
+            { text: "第二章：应用层", link: "/Computer Networking/Chapter2" }
           ]
         }
       ]
