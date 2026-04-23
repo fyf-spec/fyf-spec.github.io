@@ -1,9 +1,11 @@
 ---
-title: GEMM Notes
+title: "GEMM: SIMD Implement on CPU and Triton Implemetn on GPU"
 description: CPU GEMM 到 Triton GEMM 的实现思路与优化笔记。
+outline: deep
+aside: left
 ---
 
-# GEMM Notes
+# GEMM: SIMD Implement on CPU and Triton Implemetn on GPU
 
 ## CPU GEMM
 

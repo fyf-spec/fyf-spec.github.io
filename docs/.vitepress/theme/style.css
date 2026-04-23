@@ -62,14 +62,18 @@ body {
 
 .VPNavBar .container,
 .VPNavBar.has-sidebar .container {
-  background: var(--fyf-surface);
-  border: 1px solid var(--fyf-border);
-  border-radius: 24px;
-  box-shadow: var(--fyf-shadow);
-  margin-top: 12px;
+  background: transparent !important;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-top: 0;
   max-width: calc(var(--vp-layout-max-width) - 32px);
   padding-left: 20px;
   padding-right: 20px;
+}
+
+.VPNavBar .divider {
+  display: none;
 }
 
 .VPNavBar .title span,
@@ -77,6 +81,13 @@ body {
 .VPNavBarExtra .item {
   font-family: var(--vp-font-family-heading);
   letter-spacing: 0.01em;
+}
+
+.VPNavBarTitle .title,
+.VPNavBarMenuLink,
+.VPNavBarMenu .text,
+.VPNavBarExtra .item {
+  color: rgba(238, 238, 238, 0.86);
 }
 
 .VPNavBarMenuLink,
@@ -145,11 +156,14 @@ html.page-ready .page-fade {
 }
 
 .landing-shell-about {
-  max-width: 880px;
+  align-items: start;
+  justify-items: start;
+  max-width: 1100px;
   min-height: calc(100vh - 180px);
   overflow: visible;
-  place-items: center;
+  padding: 0.8rem 2.3rem 3rem;
   position: relative;
+  width: 100%;
   z-index: 1;
 }
 
@@ -170,36 +184,20 @@ html.page-ready .page-fade {
 }
 
 .about-panel {
-  min-height: 420px;
-  padding: 2.5rem;
-  width: min(100%, 760px);
+  min-height: 0;
+  padding: 0;
+  width: 100%;
 }
 
 .about-panel-game {
-  background: linear-gradient(135deg, rgba(5, 12, 28, 0.54), rgba(1, 5, 16, 0.78));
-  border: 1px solid rgba(118, 209, 255, 0.16);
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(55, 132, 187, 0.08);
-  color: #eef7ff;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: rgba(226, 226, 226, 0.86);
   pointer-events: none;
   position: relative;
   z-index: 1;
-}
-
-.about-panel-game .landing-kicker {
-  color: rgba(123, 220, 255, 0.78);
-}
-
-.about-panel h1 {
-  font-family: var(--vp-font-family-heading);
-  font-size: clamp(2.8rem, 5vw, 4.5rem);
-  line-height: 1;
-  margin: 0.9rem 0 0;
-}
-
-.about-panel-body {
-  min-height: 220px;
 }
 
 .home-game-shell {
@@ -215,6 +213,67 @@ html.page-ready .page-fade {
   display: block;
   height: 100%;
   width: 100%;
+}
+
+.about-copy {
+  font-family: var(--vp-font-family-heading);
+  font-size: clamp(1.02rem, 1.45vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
+  max-width: 980px;
+  pointer-events: auto;
+}
+
+.about-copy p {
+  margin: 0 0 1.12rem;
+}
+
+.about-copy .about-lede {
+  margin-bottom: 1.22rem;
+}
+
+.about-copy a {
+  color: rgba(226, 226, 226, 0.62);
+  text-decoration-color: rgba(226, 226, 226, 0.46);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.36em;
+}
+
+.about-copy a:hover {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration-color: rgba(255, 255, 255, 0.72);
+}
+
+.about-copy ul {
+  color: rgba(226, 226, 226, 0.86);
+  margin: 0 0 1.12rem;
+  padding-left: 2rem;
+}
+
+.about-copy li {
+  margin: 0.42rem 0;
+  padding-left: 0.35rem;
+}
+
+.about-copy li::marker {
+  color: rgba(150, 150, 150, 0.58);
+  font-size: 0.8em;
+}
+
+.about-beliefs {
+  column-gap: 3.2rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style-position: outside;
+}
+
+.about-beliefs li {
+  margin: 0.35rem 0 0.65rem;
+}
+
+.about-copy em {
+  font-style: italic;
 }
 
 .landing-copy {
@@ -506,7 +565,7 @@ html.page-ready .page-fade {
 .blog-entry-title {
   color: #fff;
   font-family: var(--vp-font-family-heading);
-  font-size: clamp(1.1rem, 1.8vw, 1.65rem);
+  font-size: clamp(0.8rem, 1.2vw, 1.15rem);
   line-height: 1.38;
   text-decoration: none !important;
 }
@@ -610,8 +669,8 @@ html.page-ready .page-fade {
 
 :root[data-page-kind="blog-index"] .VPNavBar .container,
 :root[data-page-kind="blog-index"] .VPNavBar.has-sidebar .container {
-  background: rgba(14, 14, 14, 0.96);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: transparent !important;
+  border-color: transparent;
   box-shadow: none;
 }
 
@@ -648,15 +707,11 @@ html.page-ready .page-fade {
 
 :root[data-page-kind="blog-index"] .VPSidebar,
 :root[data-page-kind="blog-index"] .VPLocalNav,
-:root[data-page-kind="blog-index"] .aside,
-:root[data-page-kind="blog-post"] .VPSidebar,
-:root[data-page-kind="blog-post"] .VPLocalNav,
-:root[data-page-kind="blog-post"] .aside {
+:root[data-page-kind="blog-index"] .aside {
   display: none !important;
 }
 
-:root[data-page-kind="blog-index"] .VPDoc.has-sidebar .content,
-:root[data-page-kind="blog-post"] .VPDoc.has-sidebar .content {
+:root[data-page-kind="blog-index"] .VPDoc.has-sidebar .content {
   padding-left: 0;
 }
 
@@ -744,6 +799,15 @@ html.page-ready .page-fade {
     grid-template-columns: 1fr;
   }
 
+  .landing-shell-about {
+    padding-left: 1.6rem;
+    padding-right: 1.6rem;
+  }
+
+  .about-beliefs {
+    column-gap: 1.8rem;
+  }
+
   .landing-copy,
   .landing-featured,
   .landing-strip,
@@ -786,8 +850,8 @@ html.page-ready .page-fade {
 
   .VPNavBar .container,
   .VPNavBar.has-sidebar .container {
-    border-radius: 18px;
-    margin-top: 8px;
+    border-radius: 0;
+    margin-top: 0;
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -795,6 +859,19 @@ html.page-ready .page-fade {
   .landing-shell,
   .blog-page {
     padding-bottom: 2rem;
+  }
+
+  .landing-shell-about {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .about-copy {
+    font-size: 1.02rem;
+  }
+
+  .about-beliefs {
+    grid-template-columns: 1fr;
   }
 
   .landing-copy,

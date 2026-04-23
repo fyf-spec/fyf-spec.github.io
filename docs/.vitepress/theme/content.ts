@@ -36,22 +36,6 @@ export const noteSections: NoteSection[] = [
     countLabel: "6 lectures"
   },
   {
-    title: "HPC",
-    label: "Systems",
-    link: "/hpc/memory-bandwidth",
-    prefix: "/hpc/",
-    summary: "高性能计算、性能分析、OpenBLAS 调试与底层工程实践。",
-    countLabel: "2 notes"
-  },
-  {
-    title: "LeetCode",
-    label: "Practice",
-    link: "/leetcode/169_MajorElement",
-    prefix: "/leetcode/",
-    summary: "题解、常见技巧与算法模板整理，偏重可复用思路。",
-    countLabel: "2 problems"
-  },
-  {
     title: "CSAPP",
     label: "Systems Core",
     link: "/csapp/Chapter3",
@@ -71,12 +55,20 @@ export const noteSections: NoteSection[] = [
 
 export const blogPosts: BlogPost[] = [
   {
-    title: "GEMM Notes",
-    link: "/blogs/gemm-notes",
+    title: "GLM-5 Notes",
+    link: "/blogs/GLM-5-notes/GLM_Notes",
+    date: "2026-04-24",
+    category: "technical",
+    subtitle: "GLM-5 的模型结构、训练基础设施、后训练与 Agentic RL 笔记。",
+    image: "/blogs/GLM-5-notes/archi.png"
+  },
+  {
+    title: "GEMM: SIMD Implement on CPU and Triton Implemetn on GPU",
+    link: "/blogs/gemm-notes/gemm-notes",
     date: "2026-04-23",
     category: "technical",
     subtitle: "从 CPU cache blocking、packing 和 SIMD micro-kernel，到 Triton GEMM 的 pointer math 与 L2 reuse。",
-    image: "/blogs/CPU_GEMM.png"
+    image: "/blogs/gemm-notes/CPU_GEMM.png"
   }
 ];
 

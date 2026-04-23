@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "FYF Notes",
+  title: "Evan Feng",
   description: "",
   lang: "zh-CN",
   markdown: {
@@ -13,10 +13,8 @@ export default defineConfig({
         text: "Notes",
         items: [
           { text: "首页", link: "/" },
-          { text: "HPC", link: "/hpc/memory-bandwidth" },
           { text: "Algorithm", link: "/algorithm-design-and-analysis/lecture1" },
           { text: "CS 336", link: "/CS336/lecture1" },
-          { text: "LeetCode", link: "/leetcode/169_MajorElement" },
           { text: "CSAPP", link: "/csapp/Chapter3" },
           { text: "Computer Networking", link: "/Computer Networking/Chapter1" }
         ]
@@ -25,7 +23,14 @@ export default defineConfig({
         text: "Blogs",
         items: [
           { text: "全部博客", link: "/blogs/" },
-          { text: "2026-04-23 · GEMM Notes", link: "/blogs/gemm-notes" }
+          {
+            text: "2026-04-24 · GLM-5 Notes",
+            link: "/blogs/GLM-5-notes/GLM_Notes"
+          },
+          {
+            text: "2026-04-23 · GEMM: SIMD Implement on CPU and Triton Implemetn on GPU",
+            link: "/blogs/gemm-notes/gemm-notes"
+          }
         ]
       }
     ],
@@ -99,14 +104,6 @@ export default defineConfig({
             { text: "第一章：计算机网络和因特网", link: "/Computer Networking/Chapter1" },
             { text: "第二章：应用层", link: "/Computer Networking/Chapter2" },
             { text: "第三章：传输层", link: "/Computer Networking/Chapter3" }
-          ]
-        }
-      ],
-      "/blogs/": [
-        {
-          text: "Blogs",
-          items: [
-            { text: "2026-04-23 · GEMM Notes", link: "/blogs/gemm-notes" }
           ]
         }
       ]
