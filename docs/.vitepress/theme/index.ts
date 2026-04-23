@@ -1,6 +1,11 @@
 import DefaultTheme from "vitepress/theme";
 import { useData, useRoute } from "vitepress";
-import { nextTick, watch } from "vue";
+import { h, nextTick, watch } from "vue";
+import BlogCatalog from "./components/BlogCatalog.vue";
+import HomeLanding from "./components/HomeLanding.vue";
+import PageFooterNav from "./components/PageFooterNav.vue";
+import PageMeta from "./components/PageMeta.vue";
+import { getPageKind } from "./content";
 import "./style.css";
 
 function escapeHtml(input: string): string {
@@ -57,12 +62,38 @@ async function renderMermaidDiagrams(isDark: boolean): Promise<void> {
 
 export default {
   extends: DefaultTheme,
+  Layout: () => {
+    return h(DefaultTheme.Layout, null, {
+      "doc-before": () => h(PageMeta),
+      "doc-after": () => h(PageFooterNav)
+    });
+  },
+  enhanceApp({ app }) {
+    app.component("BlogCatalog", BlogCatalog);
+    app.component("HomeLanding", HomeLanding);
+  },
   setup() {
     const route = useRoute();
     const { isDark } = useData();
 
+    const syncPageKind = (): void => {
+      if (typeof document === "undefined") {
+        return;
+      }
+
+      const root = document.documentElement;
+      root.dataset.pageKind = getPageKind(route.path);
+      root.classList.remove("page-ready");
+      requestAnimationFrame(() => {
+        root.classList.add("page-ready");
+      });
+    };
+
     const rerender = (): void => {
-      void nextTick(() => renderMermaidDiagrams(isDark.value));
+      void nextTick(() => {
+        syncPageKind();
+        void renderMermaidDiagrams(isDark.value);
+      });
     };
 
     watch(() => route.path, rerender, { immediate: true });
