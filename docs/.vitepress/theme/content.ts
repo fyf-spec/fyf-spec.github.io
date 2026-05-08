@@ -55,6 +55,22 @@ export const noteSections: NoteSection[] = [
 
 export const blogPosts: BlogPost[] = [
   {
+    title: "An Open Problem in RL: Beyond Verifiable Rewards",
+    link: "/blogs/blogs-reflection/rl-open-problem",
+    date: "2026-05-05",
+    category: "reflection",
+    subtitle: "A reflection on how RL might apply to research, agent planning, and writing when exact rewards and formal answers are unavailable.",
+    image: ""
+  },
+  {
+    title: "Training and Inference Mismatch: IcePop",
+    link: "/blogs/IcePop/Training%20and%20Inference%20Mismatch%20--%20IcePop",
+    date: "2026-04-29",
+    category: "technical",
+    subtitle: "A short technical note on IcePop, token-level mismatch masking, and why MoE RL turns fragile when rollout and training engines disagree.",
+    image: "/blogs/IcePop/image.png"
+  },
+  {
     title: "GLM-5 Notes",
     link: "/blogs/GLM-5-notes/GLM_Notes",
     date: "2026-04-24",

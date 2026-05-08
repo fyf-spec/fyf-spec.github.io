@@ -24,6 +24,14 @@ export default defineConfig({
         items: [
           { text: "全部博客", link: "/blogs/" },
           {
+            text: "2026-05-05 · An Open Problem in RL: Beyond Verifiable Rewards",
+            link: "/blogs/blogs-reflection/rl-open-problem"
+          },
+          {
+            text: "2026-04-29 · Training and Inference Mismatch: IcePop",
+            link: "/blogs/IcePop/Training%20and%20Inference%20Mismatch%20--%20IcePop"
+          },
+          {
             text: "2026-04-24 · GLM-5 Notes",
             link: "/blogs/GLM-5-notes/GLM_Notes"
           },
