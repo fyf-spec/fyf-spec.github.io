@@ -24,6 +24,10 @@ export default defineConfig({
         items: [
           { text: "全部博客", link: "/blogs/" },
           {
+            text: "2026-05-09 · Glitch Token and MiniMax-M2",
+            link: "/blogs/Glitch-token-minimax-M2/Glitch_token_minimax-M2"
+          },
+          {
             text: "2026-05-05 · An Open Problem in RL: Beyond Verifiable Rewards",
             link: "/blogs/blogs-reflection/rl-open-problem"
           },
@@ -53,7 +57,12 @@ export default defineConfig({
             { text: "Lecture 4: FFT", link: "/algorithm-design-and-analysis/lecture4" },
             { text: "Lecture 5: Graph & SCC", link: "/algorithm-design-and-analysis/lecture5" },
             { text: "Lecture 6: Shortest Path & Fibonacci Heap", link: "/algorithm-design-and-analysis/lecture6" },
-            { text: "Lecture 7: Negative Weight Shortest Path & Bellman-Ford", link: "/algorithm-design-and-analysis/lecture7" }
+            { text: "Lecture 7: Negative Weight Shortest Path & Bellman-Ford", link: "/algorithm-design-and-analysis/lecture7" },
+            { text: "Lecture 8: Greedy & MST", link: "/algorithm-design-and-analysis/lecture8" },
+            { text: "Lecture 9: More Greedy Algorithms", link: "/algorithm-design-and-analysis/lecture9" },
+            { text: "Lecture 10: Dynamic Programming", link: "/algorithm-design-and-analysis/lecture10" },
+            { text: "Lecture 11: Knapsack & LIS Optimization", link: "/algorithm-design-and-analysis/lecture11" },
+            { text: "Lecture 12: Manufacturing Cost DP", link: "/algorithm-design-and-analysis/lecture12" }
           ]
         }
       ],

@@ -25,7 +25,7 @@ export const noteSections: NoteSection[] = [
     link: "/algorithm-design-and-analysis/lecture1",
     prefix: "/algorithm-design-and-analysis/",
     summary: "算法设计与分析课程笔记，覆盖分治、图算法、最短路与复杂度基础。",
-    countLabel: "10 lectures"
+    countLabel: "12 lectures"
   },
   {
     title: "CS 336",
@@ -54,6 +54,14 @@ export const noteSections: NoteSection[] = [
 ];
 
 export const blogPosts: BlogPost[] = [
+  {
+    title: "Glitch Token and MiniMax-M2",
+    link: "/blogs/Glitch-token-minimax-M2/Glitch_token_minimax-M2",
+    date: "2026-05-09",
+    category: "technical",
+    subtitle: "My notes on the MiniMax-M2 glitch token failure, LM head drift, and post-training mismatch.",
+    image: ""
+  },
   {
     title: "An Open Problem in RL: Beyond Verifiable Rewards",
     link: "/blogs/blogs-reflection/rl-open-problem",

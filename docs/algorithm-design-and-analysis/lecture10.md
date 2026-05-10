@@ -1,109 +1,171 @@
-## 背包问题 Knapsnap Problem
+# Dynamic programming
+![divide and conquer vs greedy](images/divide_and_conquer_vs_greedy_schema.png)
+![dp schema](images/dp_schema.png)
 
-- **Input**: $n$ items with cost $c_i$ and value $v_i$ and a capacity $W$.
-- **Output**: A subset of items such that $\sum c_i \le W$ and $\sum v_i$ is maximized.
+## Base case: Fibonacci recursion
+![fibonacci dp](images/fibonacci_dp.png)
+动态规划最基本的思路：**记忆化搜索**， 重复的子问题将结果存储起来，避免重复计算。Fibonacci递归优化之后：
+![fibonacci  dp improvement](images/fibonacci_dp_impro.png)
 
-| Item | Value | Cost |
-| --- | ---: | ---: |
-| iPhone | 8888 | 8888 |
-| Algorithm Book | 10000 | 500 |
-| Laptop | 8888 | 8500 |
-| Hermes | 90000 | 100000 |
+## Guideline for DP design
+根据上面的子问题记忆化优化之后，我们可看到，DP的流程已经被简化成了一个DAG，接下来只需要将边逆向，按照拓扑序从小问题开始计算即可。
+```
+1. 设计 递归 算法
+2. 合并相同子问题
+3. 得到合并后得到的DAG， 根据拓扑序计算子问题
+```
 
-### A greedy approach
-Select the item from larger *value-cost ratio*(最高性价比)
+## Shortest Path in DAG
 
-When the greedy approach fails?
+递归描述
+$$
+dist[t] = min_{v}{dist[v] + d(v,t)}
+$$
+![DAG DP](images/DAG_DP.png)
 
-Because the item and value are discrete, we can't divide the item. How to spend the capacity $W$ is a **NP-HARD** problem(namely how can we find a subset of $c_i$ that their sum exactly equals $W$)
+```text
+// Input: DAG G = (V, E), source s, edge weight w(u, v)
+// Output: dist[v] = shortest distance from s to v
+Function DAG_Shortest_Path(G, s):
+    order = TopologicalSort(G)
+    
+    for each v in V:
+        dist[v] = infinity
+        pre[v] = NIL
+    dist[s] = 0
+    
+    for each u in order:
+        if dist[u] == infinity:
+            continue
+        for each edge (u, v) in E:
+            if dist[u] + w(u, v) < dist[v]:
+                dist[v] = dist[u] + w(u, v)
+                pre[v] = u
+                
+    return dist, pre
+```
 
-### DP approach 
-**Subproblem**: $f[i,w]$ is the maximum value we can get by using the first $i$ items and with total budget $w$.
+这里的 DP 状态就是 `dist[v]`。由于图本身是 DAG，拓扑序保证在处理一条边 $(u,v)$ 时，`dist[u]` 已经是最终值，所以每条边只需要被松弛一次。
 
-**Transition Formula**
+**Time Complexity**: $O(|V|+|E|)$。
 
-- What we always do before:
-  Define the state clearly.
-- $f[i,w]$: the maximum value we can get by using the first $i$ items, and with $w$ budget.
+## Longest increasing subsequence 最长上升子序列
+**Input**: a sequence $a_1, a_2, a_3, ...$
 
-- Two options for item $i$:
-  - **Buy it**: We can use at most $w-c_i$ budget before item $i$.
-  - **Not buy it**: We can use at most $w$ budget before item $i$.
-
-- Therefore,
+**Output**: the longest increasing subsequence (LIS)
 
 $$
-f[i,w] = \max\{f[i-1,w], f[i-1,w-c_i] + v_i\}
+a_{i_1} < a_{i_2} < \cdots < a_{i_k}
+\quad \text{and} \quad
+i_1 < i_2 < \cdots < i_k
 $$
 
-when $w \ge c_i$.
+递归角度：先枚举 LIS 的最后一个元素。如果 LIS 以 $a_i$ 结尾，那么它前面的元素只能来自 $a_j$，其中 $j<i$ 且 $a_j<a_i$。
 
-If $w < c_i$, then
+定义状态：
 
 $$
-f[i,w] = f[i-1,w]
+LIS[i] = \text{the length of the longest increasing subsequence ended by } a_i
 $$
 
-### Check the topological order
+为了统一边界，可以加入一个虚拟起点：
 
-- $f[i,w]$ only depends on states in row $i-1$.
-- So we can fill the DP table row by row, from small $i$ to large $i$.
-- Inside each row, enumerate budget $w=0,1,2,\dots,W$.
-- The final answer is $f[n,W]$.
+$$
+a_0 = -\infty,\quad LIS[0] = 0
+$$
 
-| $f[i,w]$ | 0 | 1 | 2 | 3 | 4 | 5 | $\cdots$ | $W$ |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 1 | 0 |  |  |  |  |  |  |  |
-| 2 | 0 |  |  |  |  |  |  |  |
-| 3 | 0 |  |  |  |  |  |  |  |
-| $\cdots$ | 0 |  |  |  |  |  |  |  |
-| $n$ | 0 |  |  |  |  |  |  | $f[n,W]$ |
+递推式：
 
-- Time complexity: $O(nW) \cdot O(1) = O(nW)$
+$$
+LIS[i] = 1 + \max_{\substack{0 \le j < i \\ a_j < a_i}} LIS[j]
+$$
 
-### $O(nW)$ is NOT polynomial!
-- Input Size: the unit of bits to represent the input.
-- $W = 2^N$ by using $N$ bits. $O(w)$ is $O(2^N)$.
-- So the complexity is $O(n2^N)$, which is exponential.
+最终答案：
 
-### Some approximal ideas
-Some times $O(nW)$ is unbearable, can we use some approximal approach to quickly get answer near **OPT**?
+$$
+\max_{1 \le i \le n} LIS[i]
+$$
 
-1. Round cost $c_i$
+也可以把它看成 DAG 上的最长路：如果 $j<i$ 且 $a_j<a_i$，就连一条边 $a_j \to a_i$。因为所有边都从小下标指向大下标，所以 $1,2,\dots,n$ 本身就是拓扑序。
 
-2. Round value $v_i$
-Let $V = max v_i$, then OPT <= nV.
+```text
+// Input: sequence a[1..n]
+// Output: length of the longest increasing subsequence
+Function LIS(a):
+    a[0] = -infinity
+    lis[0] = 0
+    
+    for i from 1 to n:
+        lis[i] = 1
+        pre[i] = NIL
+        for j from 0 to i - 1:
+            if a[j] < a[i] and lis[j] + 1 > lis[i]:
+                lis[i] = lis[j] + 1
+                pre[i] = j
+                
+    ans = max_{1 <= i <= n} lis[i]
+    return ans, pre
+```
 
-Let $A[i, v]$ be the **minimum cost**  we spend to get value $v$ using the first $i$ items.
+**Time Complexity**: $O(n^2)$。外层枚举终点 $i$，内层枚举所有可能前驱 $j<i$。
 
-**Trasition Formula**:
-$A[i+1, v] = min(A[i,v], A[i,v-v_i]+c_i)$
+## Edit Distance
+How many operations are needed to change one string to the other?
+**Allowed operations:**
+- insertion
+- deletion
+- replacement
 
-| Ori Value| Approxi value | cost
-| --- | --- | --- |
-| 86526 | 86000 -> 86 | 102435 |
-| 25473 | 25000 -> 25 | 123543 |
-| 87654 | 87000 -> 87 | 234525 |
-| 65476 | 65000 -> 65 | 123543 |
-| 25477 | 25000 -> 25 | 345756 |
+可以写成等价操作：
+- alignment: 插入空格使得两个string长度一样
+- insertion: 将空格处写成character
+- deletion: 将char写成空格
+- replacement: 重写char
 
-## Largest Number in k Consecutive Numbers
-- **Input**: A sequence of n numbers 
-- **Output**: Find the largest number in k consecutive numbers
+设两个字符串分别为 $X=x_1,x_2,\dots,x_m$ 和 $Y=y_1,y_2,\dots,y_n$。
 
-1. 朴素的做法 :$O(nk)$
+定义状态：
+$$
+ED[i][j] = \text{the edit distance between } X[1..i] \text{ and } Y[1..j]
+$$
 
-2. 使用堆维护: $O(nlogk)$
+递推时只看最佳 alignment 的最后一列，有三种情况：
 
-3. 动态规划
-维护一个PLL列表，从前k个数开始，按降序排列，此先后移动一个元素，pop out最前面的，pop in新加入的元素。
-新加入的元素在加入时，踢出比它小的数。
+$$
+ED[i][j] =
+\min
+\begin{cases}
+ED[i-1][j-1] + \mathbf{1}_{x_i \neq y_j} & \text{match / replacement}\\
+ED[i][j-1] + 1 & \text{insertion}\\
+ED[i-1][j] + 1 & \text{deletion}
+\end{cases}
+$$
 
-初步来看，每次最坏踢出k个数，总时间复杂度仍然是$O(nk)$?
+```text
+// Input: strings X[1..m], Y[1..n]
+// Output: edit distance between X and Y
+Function Edit_Distance(X, Y):
+    m = length(X)
+    n = length(Y)
+    
+    for i from 0 to m:
+        ED[i][0] = i
+    for j from 0 to n:
+        ED[0][j] = j
+        
+    for i from 1 to m:
+        for j from 1 to n:
+            replace = ED[i - 1][j - 1]
+            if X[i] != Y[j]:
+                replace = replace + 1
+                
+            insert = ED[i][j - 1] + 1
+            delete = ED[i - 1][j] + 1
+            ED[i][j] = min(replace, insert, delete)
+            
+    return ED[m][n]
+```
 
-均摊分析：当一个数($a_i$)踢出k个数，之后新加入的元素就不需要再与被踢出的数比较了，只需要与$a_i$比较。
+表格从左上到右下填，等价于在 `ED[i][j]` 的子问题 DAG 上按拓扑序计算。
 
-从Charge的角度来看，每个数只会被pop in一次，比较并pop out一次，因此均摊时间复杂度为$O(n)$.
-
-
+**Time Complexity**: $O(mn)$。如果只需要距离值，可以只保留当前行和上一行，把空间复杂度降到 $O(n)$。
