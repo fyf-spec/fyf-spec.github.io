@@ -25,7 +25,7 @@ export const noteSections: NoteSection[] = [
     link: "/algorithm-design-and-analysis/lecture1",
     prefix: "/algorithm-design-and-analysis/",
     summary: "算法设计与分析课程笔记，覆盖分治、图算法、最短路与复杂度基础。",
-    countLabel: "12 lectures"
+    countLabel: "13 lectures"
   },
   {
     title: "CS 336",
@@ -49,11 +49,51 @@ export const noteSections: NoteSection[] = [
     link: "/Computer%20Networking/Chapter1",
     prefix: "/Computer Networking/",
     summary: "自顶向下的计算机网络笔记，覆盖应用层、传输层与网络基础。",
-    countLabel: "3 chapters"
+    countLabel: "4 chapters"
+  },
+  {
+    title: "ICE2603",
+    label: "Computer Architecture",
+    link: "/ICE2603/Chapter5",
+    prefix: "/ICE2603/",
+    summary: "Computer architecture notes, currently focused on memory hierarchy, cache behavior, virtual memory, and dependability.",
+    countLabel: "1 chapter"
+  },
+  {
+    title: "Diary",
+    label: "Personal Notes",
+    link: "/diary/0424",
+    prefix: "/diary/",
+    summary: "Short personal review notes and follow-up queues.",
+    countLabel: "1 note"
   }
 ];
 
 export const blogPosts: BlogPost[] = [
+  {
+    title: "ARPO Notes",
+    link: "/blogs/ARPO/ARPO_notes",
+    date: "2026-05-14",
+    category: "technical",
+    subtitle: "Notes on Agentic Reinforced Policy Optimization, entropy-triggered branching, and token credit assignment.",
+    image: ""
+  },
+  {
+    title: "Interview Review",
+    link: "/blogs/interview-review/review",
+    date: "2026-05-14",
+    category: "reflection",
+    subtitle: "Post-interview review notes on RoPE, SFT/RL token efficiency, and KV cache serving tradeoffs.",
+    image: ""
+  },
+  {
+    title: "Attention Sink Survey",
+    link: "/blogs/Survey-on-attention-sink/attention_sink_survey",
+    date: "2026-05-14",
+    category: "technical",
+    subtitle: "A visual scaffold for attention sink notes.",
+    image: ""
+  },
   {
     title: "Glitch Token and MiniMax-M2",
     link: "/blogs/Glitch-token-minimax-M2/Glitch_token_minimax-M2",

@@ -3,6 +3,7 @@ import { useData, useRoute } from "vitepress";
 import { h, nextTick, watch } from "vue";
 import BlogCatalog from "./components/BlogCatalog.vue";
 import HomeLanding from "./components/HomeLanding.vue";
+import NoteVisual from "./components/NoteVisual.vue";
 import PageFooterNav from "./components/PageFooterNav.vue";
 import PageMeta from "./components/PageMeta.vue";
 import { getPageKind } from "./content";
@@ -71,6 +72,7 @@ export default {
   enhanceApp({ app }) {
     app.component("BlogCatalog", BlogCatalog);
     app.component("HomeLanding", HomeLanding);
+    app.component("NoteVisual", NoteVisual);
   },
   setup() {
     const route = useRoute();
