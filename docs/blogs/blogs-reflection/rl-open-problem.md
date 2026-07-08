@@ -3,7 +3,6 @@ title: "An Open Problem in RL: Beyond Verifiable Rewards"
 description: "A reflection on how RL might apply to research, agent planning, and writing when exact rewards and formal answers are unavailable."
 date: 2026-05-05
 outline: deep
-aside: left
 ---
 
 # An Open Problem in RL: Beyond Verifiable Rewards

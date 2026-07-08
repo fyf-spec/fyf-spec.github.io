@@ -60,6 +60,20 @@ body {
   background: transparent !important;
 }
 
+.VPNav {
+  transition:
+    background-color 0.5s,
+    opacity 0.2s ease,
+    transform 0.24s ease;
+  will-change: transform;
+}
+
+html.nav-scrolled-away .VPNav {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--vp-nav-height) * -1), 0);
+}
+
 .VPNavBar .container,
 .VPNavBar.has-sidebar .container {
   background: transparent !important;
@@ -194,7 +208,7 @@ html.page-ready .page-fade {
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  color: rgba(226, 226, 226, 0.86);
+  color: #f2f5f7;
   pointer-events: none;
   position: relative;
   z-index: 1;
@@ -222,6 +236,7 @@ html.page-ready .page-fade {
   letter-spacing: 0.01em;
   line-height: 1.55;
   max-width: 980px;
+  overflow-wrap: anywhere;
   pointer-events: auto;
 }
 
@@ -234,19 +249,19 @@ html.page-ready .page-fade {
 }
 
 .about-copy a {
-  color: rgba(226, 226, 226, 0.62);
-  text-decoration-color: rgba(226, 226, 226, 0.46);
+  color: #8ee8dc;
+  text-decoration-color: rgba(142, 232, 220, 0.68);
   text-decoration-thickness: 2px;
   text-underline-offset: 0.36em;
 }
 
 .about-copy a:hover {
-  color: rgba(255, 255, 255, 0.92);
-  text-decoration-color: rgba(255, 255, 255, 0.72);
+  color: #c7fff7;
+  text-decoration-color: rgba(199, 255, 247, 0.86);
 }
 
 .about-copy ul {
-  color: rgba(226, 226, 226, 0.86);
+  color: #f2f5f7;
   margin: 0 0 1.12rem;
   padding-left: 2rem;
 }
@@ -257,7 +272,7 @@ html.page-ready .page-fade {
 }
 
 .about-copy li::marker {
-  color: rgba(150, 150, 150, 0.58);
+  color: rgba(142, 232, 220, 0.86);
   font-size: 0.8em;
 }
 
@@ -652,6 +667,14 @@ html.page-ready .page-fade {
   padding-top: 1rem;
 }
 
+:root[data-page-kind="home"],
+:root[data-page-kind="home"] body,
+:root[data-page-kind="home"] #app,
+:root[data-page-kind="home"] .Layout,
+:root[data-page-kind="home"] .VPContent {
+  background: #050607;
+}
+
 :root[data-page-kind="blog-index"] .VPDoc {
   padding-top: 3.8rem;
 }
@@ -694,6 +717,16 @@ html.page-ready .page-fade {
   max-width: 1320px;
 }
 
+:root[data-page-kind="blog-post"] .VPDoc > .container > .content,
+:root[data-page-kind="note-doc"] .VPDoc > .container > .content {
+  max-width: 1024px;
+}
+
+:root[data-page-kind="blog-post"] .VPDoc > .container > .content > .content-container,
+:root[data-page-kind="note-doc"] .VPDoc > .container > .content > .content-container {
+  max-width: min(100%, 960px);
+}
+
 :root[data-page-kind="home"] .VPHome .vp-doc.container {
   width: 100%;
 }
@@ -728,6 +761,21 @@ html.page-ready .page-fade {
   backdrop-filter: blur(6px);
 }
 
+@media (min-width: 1440px) {
+  :root[data-page-kind="blog-post"] .VPDoc.has-aside .container {
+    max-width: 1536px;
+  }
+
+  :root[data-page-kind="blog-post"] .VPDoc.has-aside .container::before {
+    content: "";
+    display: block;
+    flex: 1 1 256px;
+    max-width: 256px;
+    min-width: 0;
+    order: 0;
+  }
+}
+
 .vp-doc h1,
 .vp-doc h2,
 .vp-doc h3,
@@ -740,6 +788,19 @@ html.page-ready .page-fade {
   font-size: clamp(2.6rem, 4vw, 4rem);
   line-height: 1;
   margin-top: 0.1rem;
+}
+
+:root[data-page-kind="blog-post"] .vp-doc h1 {
+  margin-bottom: 0.55rem;
+}
+
+.blog-title-date {
+  color: var(--fyf-accent);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  margin: 0 0 1.45rem;
 }
 
 .vp-doc h2 {

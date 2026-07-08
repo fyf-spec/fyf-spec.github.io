@@ -3,7 +3,6 @@ title: "Training and Inference Mismatch: IcePop"
 description: "A short technical note on why RL training can become off-policy when inference and training engines disagree, and how IcePop stabilizes MoE RL with token-level mismatch masking."
 date: 2026-04-29
 outline: deep
-aside: left
 ---
 
 # Training and Inference Mismatch: IcePop

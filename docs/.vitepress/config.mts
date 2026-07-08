@@ -7,6 +7,13 @@ export default defineConfig({
   markdown: {
     math: true
   },
+  srcExclude: [
+    "blogs/ARPO/**",
+    "blogs/interview-review/**",
+    "csapp/**",
+    "diary/**",
+    "ICE2603/**"
+  ],
   themeConfig: {
     nav: [
       {
@@ -15,49 +22,13 @@ export default defineConfig({
           { text: "首页", link: "/" },
           { text: "Algorithm", link: "/algorithm-design-and-analysis/lecture1" },
           { text: "CS 336", link: "/CS336/lecture1" },
-          { text: "CSAPP", link: "/csapp/Chapter3" },
-          { text: "Computer Networking", link: "/Computer Networking/Chapter1" },
-          { text: "ICE2603", link: "/ICE2603/Chapter5" },
-          { text: "Diary", link: "/diary/0424" }
+          { text: "Computer Networking", link: "/Computer Networking/Chapter1" }
         ]
       },
       {
         text: "Blogs",
-        items: [
-          {
-            text: "2026-05-14 - ARPO Notes",
-            link: "/blogs/ARPO/ARPO_notes"
-          },
-          {
-            text: "2026-05-14 - Interview Review",
-            link: "/blogs/interview-review/review"
-          },
-          {
-            text: "2026-05-14 - Attention Sink Survey",
-            link: "/blogs/Survey-on-attention-sink/attention_sink_survey"
-          },
-          { text: "全部博客", link: "/blogs/" },
-          {
-            text: "2026-05-09 · Glitch Token and MiniMax-M2",
-            link: "/blogs/Glitch-token-minimax-M2/Glitch_token_minimax-M2"
-          },
-          {
-            text: "2026-05-05 · An Open Problem in RL: Beyond Verifiable Rewards",
-            link: "/blogs/blogs-reflection/rl-open-problem"
-          },
-          {
-            text: "2026-04-29 · Training and Inference Mismatch: IcePop",
-            link: "/blogs/IcePop/Training%20and%20Inference%20Mismatch%20--%20IcePop"
-          },
-          {
-            text: "2026-04-24 · GLM-5 Notes",
-            link: "/blogs/GLM-5-notes/GLM_Notes"
-          },
-          {
-            text: "2026-04-23 · GEMM: SIMD Implement on CPU and Triton Implemetn on GPU",
-            link: "/blogs/gemm-notes/gemm-notes"
-          }
-        ]
+        link: "/blogs/",
+        activeMatch: "^/blogs/"
       }
     ],
     sidebar: {
@@ -77,7 +48,13 @@ export default defineConfig({
             { text: "Lecture 10: Dynamic Programming", link: "/algorithm-design-and-analysis/lecture10" },
             { text: "Lecture 11: Knapsack & LIS Optimization", link: "/algorithm-design-and-analysis/lecture11" },
             { text: "Lecture 12: Manufacturing Cost DP", link: "/algorithm-design-and-analysis/lecture12" },
-            { text: "Lecture 13: Tree DP & Treewidth", link: "/algorithm-design-and-analysis/lecture13" }
+            { text: "Lecture 13: Tree DP & Treewidth", link: "/algorithm-design-and-analysis/lecture13" },
+            { text: "Lecture 14: Network Flow Correctness", link: "/algorithm-design-and-analysis/lecture14" },
+            { text: "Lecture 15: Hall's Theorem & Flow Running Time", link: "/algorithm-design-and-analysis/lecture15" },
+            { text: "Lecture 16: Linear Programming & Duality", link: "/algorithm-design-and-analysis/lecture16" },
+            { text: "Lecture 17: Applications of LP Duality", link: "/algorithm-design-and-analysis/lecture17" },
+            { text: "Lecture 18: P, NP & NP-Completeness", link: "/algorithm-design-and-analysis/lecture18" },
+            { text: "Lecture 19: More NP-Complete Problems", link: "/algorithm-design-and-analysis/lecture19" }
           ]
         }
       ],
@@ -87,14 +64,6 @@ export default defineConfig({
           items: [
             { text: "Memory Bandwidth", link: "/hpc/memory-bandwidth" },
             { text: "OpenBLAS Debug", link: "/hpc/openblas-debug" }
-          ]
-        }
-      ],
-      "/ICE2603/": [
-        {
-          text: "ICE2603",
-          items: [
-            { text: "Chapter 5: Memory Hierarchy", link: "/ICE2603/Chapter5" }
           ]
         }
       ],
@@ -128,15 +97,6 @@ export default defineConfig({
           ]
         }
       ],
-      "/csapp/": [
-        {
-          text: "CSAPP",
-          items: [
-            { text: "第03章 计算机的算术运算 (lecture3)", link: "/csapp/lecture3" },
-            { text: "Chapter 3 程序的机器级表示", link: "/csapp/Chapter3" }
-          ]
-        }
-      ],
       "/Computer Networking/": [
         {
           text: "Computer Networking",
@@ -144,18 +104,12 @@ export default defineConfig({
             { text: "第一章：计算机网络和因特网", link: "/Computer Networking/Chapter1" },
             { text: "第二章：应用层", link: "/Computer Networking/Chapter2" },
             { text: "第三章：传输层", link: "/Computer Networking/Chapter3" },
-            { text: "Chapter 4: Network Layer Data Plane", link: "/Computer Networking/Chapter4" }
+            { text: "第四章：网络层：数据平面", link: "/Computer Networking/Chapter4" },
+            { text: "第五章：网络层：控制平面", link: "/Computer Networking/Chapter5" },
+            { text: "第六章：链路层和局域网", link: "/Computer Networking/Chapter6" }
           ]
         }
       ],
-      "/diary/": [
-        {
-          text: "Diary",
-          items: [
-            { text: "2026-04-24", link: "/diary/0424" }
-          ]
-        }
-      ]
     }
   }
 });

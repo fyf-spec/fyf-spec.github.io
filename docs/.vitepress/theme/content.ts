@@ -24,8 +24,8 @@ export const noteSections: NoteSection[] = [
     label: "Course Notes",
     link: "/algorithm-design-and-analysis/lecture1",
     prefix: "/algorithm-design-and-analysis/",
-    summary: "算法设计与分析课程笔记，覆盖分治、图算法、最短路与复杂度基础。",
-    countLabel: "13 lectures"
+    summary: "算法设计与分析课程笔记，覆盖分治、图算法、网络流、线性规划与复杂度基础。",
+    countLabel: "19 lectures"
   },
   {
     title: "CS 336",
@@ -36,55 +36,23 @@ export const noteSections: NoteSection[] = [
     countLabel: "6 lectures"
   },
   {
-    title: "CSAPP",
-    label: "Systems Core",
-    link: "/csapp/Chapter3",
-    prefix: "/csapp/",
-    summary: "程序的机器级表示、算术运算与系统基础知识回顾。",
-    countLabel: "2 chapters"
-  },
-  {
     title: "Computer Networking",
     label: "Networking",
     link: "/Computer%20Networking/Chapter1",
     prefix: "/Computer Networking/",
-    summary: "自顶向下的计算机网络笔记，覆盖应用层、传输层与网络基础。",
-    countLabel: "4 chapters"
-  },
-  {
-    title: "ICE2603",
-    label: "Computer Architecture",
-    link: "/ICE2603/Chapter5",
-    prefix: "/ICE2603/",
-    summary: "Computer architecture notes, currently focused on memory hierarchy, cache behavior, virtual memory, and dependability.",
-    countLabel: "1 chapter"
-  },
-  {
-    title: "Diary",
-    label: "Personal Notes",
-    link: "/diary/0424",
-    prefix: "/diary/",
-    summary: "Short personal review notes and follow-up queues.",
-    countLabel: "1 note"
+    summary: "自顶向下的计算机网络笔记，覆盖应用层、传输层、网络层与链路层。",
+    countLabel: "6 chapters"
   }
 ];
 
 export const blogPosts: BlogPost[] = [
   {
-    title: "ARPO Notes",
-    link: "/blogs/ARPO/ARPO_notes",
-    date: "2026-05-14",
+    title: "Notes on MLA FLOPs, RoPE, Query Compression, and MTP",
+    link: "/blogs/MLA-flops/MLA_flops_notes",
+    date: "2026-07-06",
     category: "technical",
-    subtitle: "Notes on Agentic Reinforced Policy Optimization, entropy-triggered branching, and token credit assignment.",
-    image: ""
-  },
-  {
-    title: "Interview Review",
-    link: "/blogs/interview-review/review",
-    date: "2026-05-14",
-    category: "reflection",
-    subtitle: "Post-interview review notes on RoPE, SFT/RL token efficiency, and KV cache serving tradeoffs.",
-    image: ""
+    subtitle: "A technical note on MLA FLOPs, matrix multiplication order, RoPE decoupling, query compression, and why MTP cannot freely reuse the main MLA cache.",
+    image: "/blogs/MLA-flops/MLA_baseline.png"
   },
   {
     title: "Attention Sink Survey",

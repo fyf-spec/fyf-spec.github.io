@@ -3,7 +3,6 @@ title: "Glitch Token and MiniMax-M2"
 description: My notes on the MiniMax-M2 glitch token failure, LM head drift, and post-training mismatch.
 date: 2026-05-09
 outline: deep
-aside: left
 ---
 
 # Glitch Token and MiniMax-M2

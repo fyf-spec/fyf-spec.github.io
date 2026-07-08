@@ -2,7 +2,6 @@
 title: "GLM-5 Notes"
 description: GLM-5 的模型结构、训练基础设施、后训练与 Agentic RL 笔记。
 outline: deep
-aside: left
 ---
 
 # GLM-5 Notes

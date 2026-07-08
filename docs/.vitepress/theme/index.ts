@@ -1,12 +1,12 @@
 import DefaultTheme from "vitepress/theme";
 import { useData, useRoute } from "vitepress";
-import { h, nextTick, watch } from "vue";
+import { h, nextTick, onMounted, onUnmounted, watch } from "vue";
 import BlogCatalog from "./components/BlogCatalog.vue";
 import HomeLanding from "./components/HomeLanding.vue";
 import NoteVisual from "./components/NoteVisual.vue";
 import PageFooterNav from "./components/PageFooterNav.vue";
 import PageMeta from "./components/PageMeta.vue";
-import { getPageKind } from "./content";
+import { getBlogByPath, getPageKind } from "./content";
 import "./style.css";
 
 function escapeHtml(input: string): string {
@@ -77,6 +77,8 @@ export default {
   setup() {
     const route = useRoute();
     const { isDark } = useData();
+    let lastScrollY = 0;
+    let scrollFrame: number | undefined;
 
     const syncPageKind = (): void => {
       if (typeof document === "undefined") {
@@ -85,20 +87,111 @@ export default {
 
       const root = document.documentElement;
       root.dataset.pageKind = getPageKind(route.path);
+      root.classList.remove("nav-scrolled-away");
       root.classList.remove("page-ready");
+      lastScrollY = typeof window === "undefined" ? 0 : window.scrollY;
       requestAnimationFrame(() => {
         root.classList.add("page-ready");
+      });
+    };
+
+    const syncNavScrollState = (): void => {
+      if (typeof window === "undefined" || typeof document === "undefined") {
+        return;
+      }
+
+      const currentScrollY = Math.max(window.scrollY, 0);
+      const root = document.documentElement;
+
+      if (currentScrollY <= 32 || currentScrollY < lastScrollY - 6) {
+        root.classList.remove("nav-scrolled-away");
+      } else if (currentScrollY > 96 && currentScrollY > lastScrollY + 6) {
+        root.classList.add("nav-scrolled-away");
+      }
+
+      lastScrollY = currentScrollY;
+      scrollFrame = undefined;
+    };
+
+    const onScroll = (): void => {
+      if (scrollFrame !== undefined || typeof window === "undefined") {
+        return;
+      }
+
+      scrollFrame = window.requestAnimationFrame(syncNavScrollState);
+    };
+
+    const syncBlogTitleDate = (): void => {
+      if (typeof document === "undefined") {
+        return;
+      }
+
+      const existingDates = document.querySelectorAll(".blog-title-date");
+      const blog = getBlogByPath(route.path);
+
+      if (getPageKind(route.path) !== "blog-post" || !blog) {
+        existingDates.forEach((element) => element.remove());
+        return;
+      }
+
+      const title = document.querySelector<HTMLElement>(
+        ".VPDoc > .container > .content > .content-container .vp-doc h1"
+      );
+
+      if (!title) {
+        existingDates.forEach((element) => element.remove());
+        return;
+      }
+
+      existingDates.forEach((element) => {
+        if (element.previousElementSibling !== title) {
+          element.remove();
+        }
+      });
+
+      let dateElement = title.nextElementSibling as HTMLElement | null;
+      if (!dateElement?.classList.contains("blog-title-date")) {
+        dateElement = document.createElement("div");
+        dateElement.className = "blog-title-date";
+        title.insertAdjacentElement("afterend", dateElement);
+      }
+
+      dateElement.textContent = blog.date;
+    };
+
+    const queueBlogTitleDateSync = (): void => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        syncBlogTitleDate();
+        window.requestAnimationFrame(syncBlogTitleDate);
       });
     };
 
     const rerender = (): void => {
       void nextTick(() => {
         syncPageKind();
+        queueBlogTitleDateSync();
         void renderMermaidDiagrams(isDark.value);
       });
     };
 
     watch(() => route.path, rerender, { immediate: true });
     watch(isDark, rerender);
+
+    onMounted(() => {
+      lastScrollY = window.scrollY;
+      window.addEventListener("scroll", onScroll, { passive: true });
+      queueBlogTitleDateSync();
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollFrame !== undefined) {
+        window.cancelAnimationFrame(scrollFrame);
+      }
+    });
   }
 };
