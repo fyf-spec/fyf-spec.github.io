@@ -1,5 +1,14 @@
 export type BlogCategory = "technical" | "reflection" | "article";
 
+export type BlogLanguageCode = "zh-CN" | "en-US";
+
+export type BlogLanguage = {
+  code: BlogLanguageCode;
+  label: string;
+  link: string;
+  title: string;
+};
+
 export type NoteSection = {
   title: string;
   label: string;
@@ -16,6 +25,7 @@ export type BlogPost = {
   category: BlogCategory;
   subtitle: string;
   image: string;
+  languages?: BlogLanguage[];
 };
 
 export const noteSections: NoteSection[] = [
@@ -45,14 +55,51 @@ export const noteSections: NoteSection[] = [
   }
 ];
 
+// Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
+  {
+    title: "Singular Values and Spectral Decomposition",
+    link: "/blogs/singular-values-spectrum/singular-values-spectrum",
+    date: "2026-07-12",
+    category: "technical",
+    subtitle: "从方向伸缩出发，理解奇异值谱、低秩近似、谱分解与谱范数。",
+    image: "",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/singular-values-spectrum/singular-values-spectrum",
+        title: "Singular Values and Spectral Decomposition"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/singular-values-spectrum/singular-values-spectrum-en",
+        title: "Singular Values and Spectral Decomposition"
+      }
+    ]
+  },
   {
     title: "Notes on MLA FLOPs, RoPE, Query Compression, and MTP",
     link: "/blogs/MLA-flops/MLA_flops_notes",
     date: "2026-07-06",
     category: "technical",
     subtitle: "A technical note on MLA FLOPs, matrix multiplication order, RoPE decoupling, query compression, and why MTP cannot freely reuse the main MLA cache.",
-    image: "/blogs/MLA-flops/MLA_baseline.png"
+    image: "/blogs/MLA-flops/MLA_baseline.png",
+    languages: [
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/MLA-flops/MLA_flops_notes",
+        title: "Notes on MLA FLOPs, RoPE, Query Compression, and MTP"
+      },
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/MLA-flops/MLA_flops_notes_zh",
+        title: "MLA FLOPs、RoPE、Query Compression 与 MTP 笔记"
+      }
+    ]
   },
   {
     title: "Attention Sink Survey",
@@ -145,7 +192,24 @@ export function getPageKind(path: string): "home" | "blog-index" | "blog-post" |
 
 export function getBlogByPath(path: string): BlogPost | undefined {
   const normalized = normalizePath(path);
-  return blogPosts.find((post) => normalizePath(post.link) === normalized);
+  return blogPosts.find((post) => {
+    if (normalizePath(post.link) === normalized) {
+      return true;
+    }
+
+    return post.languages?.some((language) => normalizePath(language.link) === normalized) ?? false;
+  });
+}
+
+export function getBlogLanguageByPath(path: string): BlogLanguage | undefined {
+  const normalized = normalizePath(path);
+  const blog = getBlogByPath(path);
+
+  if (!blog?.languages) {
+    return undefined;
+  }
+
+  return blog.languages.find((language) => normalizePath(language.link) === normalized);
 }
 
 export function getNoteSectionByPath(path: string): NoteSection | undefined {

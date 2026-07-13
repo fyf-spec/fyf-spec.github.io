@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .canvas { fill: #ffffff; }
+    .border { fill: none; stroke: #d0d7de; }
+    .mark { fill: #1f2328; }
+    @media (prefers-color-scheme: dark) {
+      .canvas { fill: #0d1117; }
+      .border { stroke: #30363d; }
+      .mark { fill: #f0f6fc; }
+    }
+  </style>
+  <rect class="canvas" width="32" height="32" rx="6" />
+  <rect class="border" x="0.75" y="0.75" width="30.5" height="30.5" rx="5.25" stroke-width="1.5" />
+  <path class="mark" d="M8 7h15v3H12v4h10v3H12v5h11v3H8z" />
+</svg>

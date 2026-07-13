@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { blogPosts, categoryLabels } from "../content";
+import type { BlogCategory } from "../content";
+
+type BlogFilter = "all" | BlogCategory;
 
 const visible = ref(false);
+const activeFilter = ref<BlogFilter>("all");
 
-function formatDate(date: string): string {
-  const [year, month, day] = date.split("-");
-  if (!year || !month || !day) {
-    return date;
-  }
+const filters: Array<{ value: BlogFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "technical", label: categoryLabels.technical },
+  { value: "reflection", label: categoryLabels.reflection },
+  { value: "article", label: categoryLabels.article }
+];
 
-  return `${month}-${day}-${year}`;
-}
+const filteredPosts = computed(() => {
+  if (activeFilter.value === "all") return blogPosts;
+  return blogPosts.filter((post) => post.category === activeFilter.value);
+});
 
 onMounted(() => {
   requestAnimationFrame(() => {
@@ -21,38 +28,32 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="blog-page page-fade" :class="{ 'is-visible': visible }">
-    <div class="blog-layout-simple">
-      <aside class="blog-legend">
-        <div class="blog-legend-item technical">
-          <span class="blog-legend-color"></span>
-          <span>{{ categoryLabels.technical }}</span>
-        </div>
-        <div class="blog-legend-item reflection">
-          <span class="blog-legend-color"></span>
-          <span>{{ categoryLabels.reflection }}</span>
-        </div>
-        <div class="blog-legend-item article">
-          <span class="blog-legend-color"></span>
-          <span>{{ categoryLabels.article }}</span>
-        </div>
-      </aside>
+  <main class="blog-page page-fade" :class="{ 'is-visible': visible }">
+    <header class="blog-header">
+      <h1>Writing</h1>
+      <p>Technical notes, course reflections, and engineering writeups.</p>
+    </header>
 
-      <div class="blog-listing blog-listing-simple" id="blog-list">
-        <a
-          v-for="(post, index) in blogPosts"
-          :key="post.link"
-          class="blog-entry blog-entry-simple"
-          :class="post.category"
-          :href="post.link"
-          :style="{ transitionDelay: `${100 + index * 35}ms` }"
-        >
-          <span class="blog-entry-date">{{ formatDate(post.date) }}</span>
-          <span class="blog-entry-title-wrap">
-            <span class="blog-entry-title">{{ post.title }}</span>
-          </span>
-        </a>
-      </div>
+    <nav class="blog-filters" aria-label="Filter writing by category">
+      <button
+        v-for="filter in filters"
+        :key="filter.value"
+        type="button"
+        :class="{ 'is-active': activeFilter === filter.value }"
+        :aria-pressed="activeFilter === filter.value"
+        @click="activeFilter = filter.value"
+      >
+        {{ filter.label }}
+      </button>
+    </nav>
+
+    <div id="blog-list" class="blog-listing" aria-live="polite">
+      <a v-for="post in filteredPosts" :key="post.link" class="blog-entry" :href="post.link">
+        <time :datetime="post.date">{{ post.date }}</time>
+        <span class="blog-entry-title">{{ post.title }}</span>
+        <span class="blog-entry-category">{{ categoryLabels[post.category] }}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </a>
     </div>
-  </section>
+  </main>
 </template>

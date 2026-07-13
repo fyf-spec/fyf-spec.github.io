@@ -5,9 +5,7 @@ date: 2026-07-06
 outline: deep
 ---
 
-# A Detailed FLOPs Perspective of MLA
-
-<p class="language-switch"><strong>语言:</strong> <a href="./MLA_flops_notes.html">English</a> | 中文</p>
+# MLA FLOPs、RoPE、Query Compression 与 MTP 笔记
 
 本文关心的是 DeepSeek-V2 MLA 里一个很关键的问题：MLA 到底省了什么，FLOPs 又被转移到了哪里，RoPE等其他部分在MLA中的计算方式会有什么变化？本文会先比较 MHA 和 MLA 在 prefill/training/decode 中的 FLOPs 差异，代入论文中真实参数分析FLOPs计算的具体细节，再顺着同一套记号讨论 RoPE、query compression 和 MTP。这样做可以让很多看起来像“架构设计”的问题，其实可以直接从矩阵乘顺序和 cache format 中看出来。
 
