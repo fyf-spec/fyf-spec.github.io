@@ -218,10 +218,7 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
   --visual-b: #b7791f;
   --visual-c: #2563eb;
   --visual-d: #be123c;
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 34%),
-    linear-gradient(315deg, rgba(183, 121, 31, 0.14), transparent 38%),
-    rgba(255, 255, 255, 0.24);
+  background: var(--fyf-surface-muted);
   border: 1px solid var(--fyf-border);
   border-radius: 8px;
   display: grid;
@@ -233,12 +230,7 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
   position: relative;
 }
 
-.dark .note-visual {
-  background:
-    linear-gradient(135deg, rgba(125, 211, 199, 0.14), transparent 34%),
-    linear-gradient(315deg, rgba(246, 197, 111, 0.12), transparent 38%),
-    rgba(255, 255, 255, 0.04);
-}
+.dark .note-visual { background: var(--fyf-surface-muted); }
 
 .note-visual-tree-dp {
   --visual-a: #2563eb;
@@ -305,18 +297,19 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
 .note-visual-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.55rem 1rem;
   margin-top: 0.95rem;
 }
 
 .note-visual-badges span {
-  background: color-mix(in srgb, var(--visual-a) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--visual-a) 30%, transparent);
-  border-radius: 999px;
-  color: var(--fyf-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.32rem 0.55rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--visual-a);
+  border-radius: 0;
+  color: var(--fyf-text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 0 0.16rem;
 }
 
 .note-visual-map {
@@ -331,18 +324,15 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
 }
 
 .note-visual-path {
-  border: 2px dashed color-mix(in srgb, var(--visual-a) 44%, transparent);
-  border-radius: 999px;
-  inset: 16%;
-  position: absolute;
-  transform: rotate(-14deg);
+  display: none;
 }
 
 .note-visual-node {
   align-content: center;
-  background: color-mix(in srgb, var(--fyf-surface-strong) 74%, transparent);
-  border: 1px solid var(--fyf-border);
-  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--fyf-border);
+  border-radius: 0;
   display: grid;
   gap: 0.25rem;
   min-height: 118px;
@@ -353,7 +343,7 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
 
 .note-visual-node:nth-child(2),
 .note-visual-node:nth-child(5) {
-  transform: translateY(16px);
+  transform: none;
 }
 
 .note-visual-node span {
@@ -375,15 +365,14 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
 }
 
 .note-visual-node::after {
-  animation: visualPulse 2.8s ease-in-out infinite;
   background: var(--visual-a);
   border-radius: 50%;
   content: "";
-  height: 9px;
+  height: 6px;
   position: absolute;
   right: 0.75rem;
   top: 0.75rem;
-  width: 9px;
+  width: 6px;
 }
 
 .note-visual-node:nth-child(3)::after {
@@ -430,29 +419,16 @@ const topicClass = computed(() => `note-visual-${props.topic}`);
 
 .note-visual-bar-track {
   background: rgba(128, 128, 128, 0.16);
-  border-radius: 999px;
-  height: 9px;
+  border-radius: 0;
+  height: 6px;
   overflow: hidden;
 }
 
 .note-visual-bar-track i {
-  background: linear-gradient(90deg, var(--visual-a), var(--visual-b), var(--visual-c));
-  border-radius: inherit;
+  background: var(--visual-a);
+  border-radius: 0;
   display: block;
   height: 100%;
-}
-
-@keyframes visualPulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.84);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.18);
-  }
 }
 
 @media (max-width: 820px) {

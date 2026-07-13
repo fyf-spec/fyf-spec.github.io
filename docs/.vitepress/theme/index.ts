@@ -1,11 +1,14 @@
 import DefaultTheme from "vitepress/theme";
 import { useData, useRoute } from "vitepress";
 import { h, nextTick, onMounted, onUnmounted, watch } from "vue";
+import ArticleLanguageSwitch from "./components/ArticleLanguageSwitch.vue";
 import BlogCatalog from "./components/BlogCatalog.vue";
 import HomeLanding from "./components/HomeLanding.vue";
 import NoteVisual from "./components/NoteVisual.vue";
 import PageFooterNav from "./components/PageFooterNav.vue";
 import PageMeta from "./components/PageMeta.vue";
+import SpectrumMicroscope from "./components/svd/SpectrumMicroscope.vue";
+import SvdExplorer from "./components/svd/SvdExplorer.vue";
 import { getBlogByPath, getPageKind } from "./content";
 import "./style.css";
 
@@ -65,7 +68,7 @@ export default {
   extends: DefaultTheme,
   Layout: () => {
     return h(DefaultTheme.Layout, null, {
-      "doc-before": () => h(PageMeta),
+      "doc-before": () => [h(PageMeta), h(ArticleLanguageSwitch)],
       "doc-after": () => h(PageFooterNav)
     });
   },
@@ -73,6 +76,8 @@ export default {
     app.component("BlogCatalog", BlogCatalog);
     app.component("HomeLanding", HomeLanding);
     app.component("NoteVisual", NoteVisual);
+    app.component("SpectrumMicroscope", SpectrumMicroscope);
+    app.component("SvdExplorer", SvdExplorer);
   },
   setup() {
     const route = useRoute();
