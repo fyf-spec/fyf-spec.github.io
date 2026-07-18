@@ -58,6 +58,28 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
+    title: "Linear Attention: From DeltaNet to KDA",
+    link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda",
+    date: "2026-07-18",
+    category: "technical",
+    subtitle: "从固定状态线性注意力出发，推导 DeltaNet、Parallel DeltaNet、Gated DeltaNet、KDA 与 Gated DeltaNet-2。",
+    image: "",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda",
+        title: "Linear Attention：From DeltaNet to KDA"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda-en",
+        title: "Linear Attention: From DeltaNet to KDA"
+      }
+    ]
+  },
+  {
     title: "Singular Values and Spectral Decomposition",
     link: "/blogs/singular-values-spectrum/singular-values-spectrum",
     date: "2026-07-12",

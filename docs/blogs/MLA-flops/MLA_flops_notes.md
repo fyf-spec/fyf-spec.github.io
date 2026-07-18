@@ -1,28 +1,71 @@
 ---
-title: "MLA FLOPs, RoPE, Query Compression, and MTP Notes"
-description: "A technical note on MLA FLOPs, matrix multiplication order, RoPE decoupling, query compression, and why MTP cannot freely reuse the main MLA cache."
-date: 2026-07-06
-outline: deep
+title: "MLA, dim by dim"
+comment: "A unified tensor view of MLA, and the conclusions it reveals."
+date: "2026-07-08"
+author: "NonLinear-1"
+excerpt: "A dimension-by-dimension walk through Multi-head Latent Attention: where the FLOPs go, why RoPE breaks absorption, why Q is compressed too, and why MLA weakens MTP's speculative-decoding gain."
 ---
 
-# A Detailed FLOPs Perspective of MLA
+# MLA, dim by dim
 
-<p class="language-switch"><strong>Language:</strong> English | <a href="./MLA_flops_notes_zh.html">Chinese</a></p>
+## Opening
 
-This note is about a key question in DeepSeek-V2 MLA: what exactly does MLA save, where do the FLOPs move, and how do RoPE and the other components change the computation? I first compare MHA and MLA in prefill/training/decode, plug in the paper's actual dimensions to make the FLOPs concrete, and then use the same notation to discuss RoPE, query compression, and MTP. The point is that many things that look like "architecture design" can be read directly from matrix multiplication order and cache format.
+This note uses one lens throughout: write attention as tensor contractions, while keeping every dimension explicit. From this view, several seemingly separate MLA phenomena can be understood more deeply and more uniformly. Specifically, we get a few interesting conclusions:
 
-Basically, the blog can be divided into four parts:
+- In prefill, MLA uses the KV latent bottleneck to reduce projection FLOPs, but it cannot absorb too early: the quadratic attention term should still live in $d_k,d_v$, not $d_c$.
+- In decode, the best order changes because the cache already exists. After absorbing key/value projections, the length-$t$ cache computation can go through the latent state instead of reconstructed per-head $K,V$.
+- RoPE gets in the way exactly because it makes the latent-to-key map position-dependent, which breaks full key absorption.
+- Q compression delays head expansion on the query side, reducing activation scale and usually projection FLOPs as well.
+- MTP-style speculative decoding behaves differently on MLA because MLA decode no longer repeatedly reads the full KV cache; it reads a smaller latent cache and does extra computation on top.
 
-- FLOPs comparison between MHA and MLA in prefill/training/decode.
-- Why RoPE gets in the way of MLA absorption.
-- Why MLA also compresses $Q$.
-- Why MTP weakens MLA's decode acceleration gain.
+![MLA sketch](./MLA_baseline.png)
 
-![MLA sketch](MLA_baseline.png)
+## Tensor View
 
-## Notation
+Before the derivations, we first fix the tensor view used throughout the note. Every $\mathrm{matmul}$ below is treated as a PyTorch-style batched tensor contraction, and every attention activation follows the `(h, T, D)` order whenever it has a head axis: head first, sequence second, feature last. Per-head weights start with `h`; shared activations such as $X$, $C^{KV}$, and $C^Q$ do not have an `h` axis. When a shared activation multiplies a per-head weight, the missing head axis is broadcast.
 
-For the derivations below, I count one multiply-add as $2$ FLOPs, and I only count matrix multiplication FLOPs. I temporarily ignore softmax, masks, normalization, RoPE elementwise rotation, and bias terms. The main dimensions used in the MLA derivation are:
+**Einsum is all you need.** In practice every one of the multiplications below can be written as a single `einsum` expression, and we find it much easier to keep track of what is being contracted vs. broadcast that way. For example:
+
+$$
+Q \;=\; X W_Q \;\;\Longleftrightarrow\;\; Q_{h,T,d_k}
+\;=\;
+\mathrm{einsum}(\texttt{"Td, hdk -> hTk"},\; X,\; W_Q).
+$$
+
+The two indices that appear on both sides (like the `d` in this example) are contracted; the ones that appear only on one side (like `h` on $W_Q$, or `T` on $X$) are preserved. Every "broadcast" I use later is just this: an activation without an `h` axis multiplies against a weight with an `h` axis, and the result inherits `h`.
+
+**Broadcast is legal only when dims line up.** Broadcasting between batch dims follows the standard PyTorch rule: when we align the batch dimensions of $A$ and $B$ from the right (the last two axes are reserved for the matmul), each pair must either match or have a `1` on one side — the side with the `1` is the one being replicated. A leading axis missing entirely (as when $X$ is only 2D above) counts as an implicit `1`. If a pair is neither equal nor has a `1`, the multiplication is undefined and the framework raises an error. Every matmul in this note satisfies the rule; whenever an activation without an `h` axis meets a weight with `h`, it is the activation's implicit `1` on the head axis being expanded to `h`.
+
+> **Transpose convention.** Throughout, $A^\top$ denotes swapping only the last two axes — the *math-style* matrix transpose that leaves batch dims untouched. In PyTorch this is `A.transpose(-1, -2)` (or the equivalent `A.mT`), *not* `A.T`, which reverses all axes. So $K$ with shape $(h, T, d_k)$ has $K^\top$ of shape $(h, d_k, T)$, and $Q K^\top$ contracts on the last two axes cleanly.
+
+**Output projection is an einsum contraction, not a batched matmul.** The final output projection $Y = O W_o$ with $O:(h, T, d_v)$ and $W_o:(h, d_v, d)$ is the one place where we write the result as $(T, d)$ rather than the "batched" $(h, T, d)$. Under the einsum convention this reads $Y = \mathrm{einsum}(\texttt{"hTv, hvd -> Td"}, O, W_o)$: the `h` axis is a contracted index because it appears on both operands but not on the output, so the sum over heads is implicit. Equivalently, $O$ can be reshaped to $(T, h d_v)$ and $W_o$ to $(h d_v, d)$, giving the standard "Concat + $W_O$" form of multi-head attention; the two views are byte-identical and both use $\mathrm{FLOPs} = 2 T h d_v d$.
+
+**Tensor FLOPs formula.** For a 3D batched matmul the FLOPs count is simple. If we write the two operands as $A$ with shape $(a_1,\ldots,a_p,\; m,\; k)$ and $B$ with shape $(b_1,\ldots,b_q,\; k,\; n)$, and let $B_1,\ldots,B_r$ be the broadcast batch dims of the output, then
+
+$$
+\mathrm{FLOPs}
+\;=\;
+2 \cdot B_1 \cdots B_r \cdot m \cdot n \cdot k .
+$$
+
+The mental shortcut: multiply every output dimension by the contracted dimension $k$, then by the $2$ that comes from counting one multiply-add as two FLOPs. Every FLOPs count in this note is one application of this formula.
+
+Two examples for concreteness:
+
+- $Q = X W_Q$ where $X:(T,d)$ and $W_Q:(h,d,d_k)$ produces $Q:(h,T,d_k)$. The contracted dim is $d$; the output dims are $h, T, d_k$; so $\mathrm{FLOPs} = 2 h T d\, d_k$.
+- $S = Q K^\top$ where $Q:(h,T,d_k)$ and $K^\top:(h,d_k,T)$ produces $S:(h,T,T)$. The contracted dim is $d_k$; the output dims are $h, T, T$; so $\mathrm{FLOPs} = 2 h T^2 d_k$.
+
+With this tensor view in hand, the rest of the note is mostly shape accounting: write the candidate contraction order, identify the output dimensions and contracted dimension, and read off the FLOPs.
+
+> **Takeaway.** Once every operation is written as a tensor contraction, FLOPs become explicit shape accounting.
+
+## Notation and Preliminaries
+
+For broader background on the cache tradeoffs from MHA/MQA/GQA to MLA, see [Su Jianlin's note](https://spaces.ac.cn/archives/10091). Here I do not try to survey those variants. I use MHA as the clean algebraic reference, and MLA as the object of the derivation.
+
+For the derivations below, I count one multiply-add as $2$ FLOPs, and I only count matrix multiplication FLOPs. I temporarily ignore softmax, masks, normalization, RoPE elementwise rotation, and bias terms. Unless stated otherwise, prefill formulas use the full $T^2$ attention matrix; causal attention replaces the full square by the lower-triangular visible pairs, but does not change the comparisons below.
+
+The main dimensions are:
 
 | Symbol | Meaning | Shape / role |
 | --- | --- | --- |
@@ -35,32 +78,94 @@ For the derivations below, I count one multiply-add as $2$ FLOPs, and I only cou
 | $d_c$ | MLA KV latent dimension | $c_i^{KV} \in \mathbb{R}^{d_c}$ |
 | $d_{qc}$ | MLA query latent dimension | $c_i^Q \in \mathbb{R}^{d_{qc}}$ |
 
-To avoid hiding the shared latent behind a head index, the more useful tensor view is:
+The MHA reference form is:
 
 $$
-\begin{aligned}
-W_Q,W_K&:(h,d,d_k),&
-W_V&:(h,d,d_v),&
-W_o&:(h,d_v,d),\\
-W_{DKV}&:(d,d_c),&
-W_{UK}&:(h,d_c,d_k),&
-W_{UV}&:(h,d_c,d_v),\\
-W_{DQ}&:(d,d_{qc}),&
-W_{UQ}&:(h,d_{qc},d_k).
-\end{aligned}
+Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V.
 $$
 
-Therefore $C^{KV}:(T,d_c)$ and $C^Q:(T,d_{qc})$ are shared latents across all heads, while $Q,K,V$ live in head space, for example $Q:(T,h,d_k)$ and $V:(T,h,d_v)$. Some equations below still keep a single-head slice for readability, but the actual storage/computation convention should be understood by the tensor shapes here.
+The shapes are:
+
+$$
+X:(T,d),\quad
+W_Q,W_K:(h,d,d_k),\quad
+W_V:(h,d,d_v),
+$$
+
+so
+
+$$
+Q,K:(h,T,d_k),\qquad V:(h,T,d_v).
+$$
+
+Then attention is:
+
+$$
+S=QK^\top,\qquad P=\operatorname{softmax}(S),\qquad O=PV,\qquad Y=OW_o.
+$$
+
+Here $S,P:(h,T,T)$, $O:(h,T,d_v)$, and the output projection $Y=OW_o$ uses the head-contraction convention from the previous section.
+
+The MLA KV path replaces per-head $K,V$ projections with a shared latent:
+
+$$
+C^{KV}=XW_{DKV},\qquad
+K=C^{KV}W_{UK},\qquad
+V=C^{KV}W_{UV}.
+$$
+
+The shapes are:
+
+$$
+W_{DKV}:(d,d_c),\quad
+C^{KV}:(T,d_c),\quad
+W_{UK}:(h,d_c,d_k),\quad
+W_{UV}:(h,d_c,d_v).
+$$
+
+Without query compression, the query path is still $Q=XW_Q$. With query compression, it is:
+
+$$
+C^Q=XW_{DQ},\qquad Q=C^QW_{UQ},
+$$
+
+with
+
+$$
+W_{DQ}:(d,d_{qc}),\quad
+C^Q:(T,d_{qc}),\quad
+W_{UQ}:(h,d_{qc},d_k).
+$$
+
+These are the only structural definitions needed later. The remaining sections ask what FLOPs we get when the same objects are multiplied in different orders.
 
 ## Baseline FLOPs
 
 I start from baseline multi-head attention (MHA), derive each matrix multiplication and its FLOPs, and then compare it with MLA to see where the optimization actually comes from.
 
+### Prefill Comparison
+
+Prefill FLOPs consist of three parts: the input projections, the quadratic attention computation, and the final output projection. The table below gives the result before the detailed derivation.
+
+| Method | Input-projection FLOPs | Attention FLOPs | Output-projection FLOPs |
+| --- | --- | --- | --- |
+| MHA | $2Tdh(2d_k+d_v)$ | $2hT^2(d_k+d_v)$ | $2Thd_vd$ |
+| MLA without query compression | $2Tdd_c+2Thdd_k+2Thd_c(d_k+d_v)$ | $2hT^2(d_k+d_v)$ | $2Thd_vd$ |
+| MLA with query compression | $2Tdd_c+2Tdd_{qc}+2Thd_{qc}d_k+2Thd_c(d_k+d_v)$ | $2hT^2(d_k+d_v)$ | $2Thd_vd$ |
+
+Plugging in the DeepSeek-V2 attention configuration $d=5120,\ h=128,\ d_k=d_v=128,\ d_c=512,\ d_{qc}=1536$ gives:
+
+| Method | Input-projection FLOPs | Relative to MHA |
+| --- | ---: | ---: |
+| MHA | $503.3\text{M}T$ | $100\%$ |
+| MLA without query compression | $206.6\text{M}T$ | $41.0\%$ |
+| MLA with query compression | $104.9\text{M}T$ | $20.8\%$ |
+
+**MLA prefill does not mainly reduce the quadratic attention FLOPs. It significantly reduces the linear projection FLOPs, and this reduction is especially clear with query compression.**
+
 ### MHA Prefill
 
-First compute the $Q,K,V$ projections from input $X$: $Q=XW_Q,\quad K=XW_K,\quad V=XW_V.$
-
-For MHA prefill, in tensor form, the full score expression $S$, attention output $O$, and output projection $Y$ are as follows. Here $P$ is the attention matrix after softmax:
+For MHA prefill, the complete score expression is
 
 $$
 S
@@ -73,48 +178,31 @@ QK^\top
 \underset{(d,T)}{X^\top}.
 $$
 
-$$
-O=PV=
-\underset{(h,T,T)}{P}
-\underset{(T,d)}{X}
-\underset{(h,d,d_v)}{W_V}.
-$$
+From a FLOPs perspective, the important point is to minimize the coefficient of the dominating $T^2$ term. Since $d_k<d$, the computation order is to first construct $Q=XW_Q$ and $K=XW_K$, and then compute $S=QK^\top$:
 
 $$
-Y
-=
-\underset{(T,h,d_v)}{O}
-\underset{(h,d_v,d)}{W_o}.
-$$
-
-For the attention score $S$, the FLOPs perspective is simple: make the coefficient of the dominating $T^2$ term as small as possible. Since $d_k<d$, the reasonable computation order is:
-
-$$
+\begin{aligned}
 \underset{(T,d)}{X}
 \underset{(h,d,d_k)}{W_Q}
-\rightarrow
-\underset{(T,h,d_k)}{Q},
-\qquad
-\mathrm{FLOPs}=2Thdd_k.
-$$
-$$
+&\rightarrow
+\underset{(h,T,d_k)}{Q},
+&\qquad \mathrm{FLOPs}&=2Thdd_k,
+\\
 \underset{(T,d)}{X}
 \underset{(h,d,d_k)}{W_K}
-\rightarrow
-\underset{(T,h,d_k)}{K},
-\qquad
-\mathrm{FLOPs}=2Thdd_k.
-$$
-$$
-\underset{(T,h,d_k)}{Q}
+&\rightarrow
+\underset{(h,T,d_k)}{K},
+&\qquad \mathrm{FLOPs}&=2Thdd_k,
+\\
+\underset{(h,T,d_k)}{Q}
 \underset{(h,d_k,T)}{K^\top}
-\rightarrow
+&\rightarrow
 \underset{(h,T,T)}{S},
-\qquad
-\mathrm{FLOPs}=2hT^2d_k,
+&\qquad \mathrm{FLOPs}&=2hT^2d_k.
+\end{aligned}
 $$
 
-Then compute the FLOPs of $O$ and $Y$. Here it is useful to view the value/output path as one head-wise four-matrix product:
+The complete value and output chain is
 
 $$
 \underset{(h,T,T)}{P}
@@ -125,40 +213,28 @@ $$
 \underset{(T,d)}{Y}.
 $$
 
-The best order is to project $X$ down to $d_v$ first, and then multiply by $P$. Across all heads, the standard order is:
+**Value/output order: use $(P(XW_V))W_o$, not $((PX)W_V)W_o$ or $P(X(W_VW_o))$.**
+
+The standard order is $XW_V\rightarrow V,\quad PV\rightarrow O,\quad OW_o\rightarrow Y,$ with total cost $F_{PVW_o}=2Thdd_v+2hT^2d_v+2Thd_vd.$
+
+Computing $PX$ first costs $2hT^2d+2Thdd_v+2Thd_vd$. Precomposing $W_VW_o$ also gives the quadratic term coefficient $d$. Since $d_v\ll d$, **the standard order is cheaper: $2hT^2d_v$ instead of $2hT^2d$.**
+
+Combining these terms, the dense MHA prefill FLOPs are
 
 $$
-XW_V \rightarrow V,\qquad PV \rightarrow O,\qquad OW_o \rightarrow Y,
-\quad
-F=2Thdd_v+2hT^2d_v+2Thd_vd.
+F_{\mathrm{MHA,prefill}}=2Tdh(2d_k+d_v)
++2hT^2(d_k+d_v)
++2Thd_vd.
 $$
 
-If we compute $PX$ first, the cost becomes $2hT^2d+2Thdd_v+2Thd_vd$. If we precompose $W_VW_o$ first, the quadratic attention multiplication also has coefficient $d$ instead of $d_v$. Since usually $d_v\ll d$, the standard order is better: the quadratic term is $2hT^2d_v$ instead of $2hT^2d$.
-
-> For causal prefill/training, an implementation only needs to compute the lower triangle. The number of visible query-key pairs is:
-> $\frac{T(T+1)}{2}.$
-> So the causal-aware attention FLOPs are:
-> $F_{\mathrm{attn,causal}}=hT(T+1)(d_k+d_v).$
-> Therefore, the causal-aware prefill FLOPs are:
-> $$
-> F_{\mathrm{MHA,prefill}}=2Tdh(2d_k+d_v)
-> +2hT^2(d_k+d_v)
-> +2Thd_vd.
-> $$
-> If the implementation explicitly uses a causal mask, replace the middle term by $hT(T+1)(d_k+d_v)$.
+> For causal prefill or training, the number of visible query-key pairs is $T(T+1)/2$. An implementation that exploits the lower triangle replaces $2hT^2(d_k+d_v)$ with $hT(T+1)(d_k+d_v)$.
 
 ### MLA Prefill
 
-For MLA prefill, first compute the shared KV latent: $C^{KV}=XW_{DKV}$. Here $C^{KV}$ is a latent representation shared by all heads.
-
-**Without Query Compression.**
-
-For MLA without query compression, the full score expression $S$ and attention output $O$ are:
+For MLA prefill, first compute the shared KV latent $C^{KV}=XW_{DKV}$. Without query compression, the complete score expression is
 
 $$
 S
-=
-QK^\top
 =
 \underset{(T,d)}{X}
 \underset{(h,d,d_k)}{W_Q}
@@ -167,107 +243,83 @@ QK^\top
 \underset{(d,T)}{X^\top}.
 $$
 
+With query compression, it becomes
+
 $$
-O=PV
+S
 =
-\underset{(h,T,T)}{P}
 \underset{(T,d)}{X}
-\underset{(d,d_c)}{W_{DKV}}
-\underset{(h,d_c,d_v)}{W_{UV}}.
+\underset{(d,d_{qc})}{W_{DQ}}
+\underset{(h,d_{qc},d_k)}{W_{UQ}}
+\underset{(h,d_k,d_c)}{W_{UK}^\top}
+\underset{(d_c,d)}{W_{DKV}^\top}
+\underset{(d,T)}{X^\top}.
 $$
 
-From a FLOPs perspective, we still watch the coefficient of the $T^2$ term. Usually $d_k<d_c$, so in prefill we should not first compute $Q^s(W_{UK}^s)^\top$ and then multiply by $(C^{KV})^\top$; that would make the dominating $QK^\top$ term become $2T^2d_c$.
+**Key-projection order: use $(XW_{DKV})W_{UK}$, not $X(W_{DKV}W_{UK})$.**
 
-There is another computation-order issue on the key side. In tensor shape, the key side in the score is:
+The relevant key-projection chain is:
 
 $$
 \underset{(T,d)}{X}
 \underset{(d,d_c)}{W_{DKV}}
 \underset{(h,d_c,d_k)}{W_{UK}}
 \rightarrow
-\underset{(T,h,d_k)}{K}.
+\underset{(h,T,d_k)}{K}.
 $$
 
-The shared-latent order is:
+Computing the shared latent first gives
 
 $$
-XW_{DKV}\rightarrow C^{KV},\qquad C^{KV}W_{UK}\rightarrow K,
-\quad
-F=2Tdd_c+2Thd_cd_k.
+XW_{DKV}\rightarrow C^{KV},\quad
+C^{KV}W_{UK}\rightarrow K, \qquad
+
+F_{(XW_{DKV})W_{UK}}
+=
+2Tdd_c+2Thd_cd_k.
 $$
 
-If we first form the effective per-head key projection $W_{DKV}W_{UK}$ and then multiply it by $X$, the activation-side cost is:
+If we first form the effective per-head key projection $W_{DKV}W_{UK}$ and then multiply it by $X$, the activation-side cost is
 
 $$
-X(W_{DKV}W_{UK})\rightarrow K,
-\quad
-F=2Thdd_k,
+F_{X(W_{DKV}W_{UK})}
+=
+2Thdd_k,
 $$
 
-not counting the extra one-time weight precomposition cost $2hdd_cd_k$. Plugging in DeepSeek-V2 values $d=5120,\ d_c=512,\ d_k=128,\ h=128$, the shared-latent order is about $22.0\text{M}T$ FLOPs, while the effective-$W_K$ order is $167.8\text{M}T$ FLOPs. In other words, the cheap path is to compute $XW_{DKV}$ first, use the shared $d_c$ bottleneck first, and only then expand to all heads.
+not counting the additional one-time weight-precomposition cost $2hdd_cd_k$.
 
-Therefore the computation order is:
+With $d=5120,\ d_c=512,\ d_k=128,\ h=128$, the shared-latent order costs $22.0\text{M}T$, versus $167.8\text{M}T$ for the effective-$W_K$ order. So compute $XW_{DKV}$ first and expand to heads afterward.
 
-$$
-\underset{(T,d)}{X}
-\underset{(d,d_c)}{W_{DKV}}
-\rightarrow
-\underset{(T,d_c)}{C^{KV}},
-\qquad
-\mathrm{FLOPs}=2Tdd_c
-\quad \text{shared across heads}.
-$$
+**Prefill score order: use $Q(C^{KV}W_{UK})^\top$, not $(QW_{UK}^\top)(C^{KV})^\top$.**
+
+Because $d_k<d_c$, applying $W_{UK}^\top$ to $Q$ first moves the dominant score contraction from $d_k$ to $d_c$.
+
+The preferred order is therefore
 
 $$
-\underset{(T,d)}{X}
-\underset{(h,d,d_k)}{W_Q}
-\rightarrow
-\underset{(T,h,d_k)}{Q},
-\qquad
-\mathrm{FLOPs}=2Thdd_k.
-$$
-
-$$
+\begin{aligned}
 \underset{(T,d_c)}{C^{KV}}
 \underset{(h,d_c,d_k)}{W_{UK}}
-\rightarrow
-\underset{(T,h,d_k)}{K},
-\qquad
-\mathrm{FLOPs}=2Thd_cd_k.
-$$
-
-$$
-\underset{(T,h,d_k)}{Q}
+&\rightarrow
+\underset{(h,T,d_k)}{K},
+&\qquad \mathrm{FLOPs}&=2Thd_cd_k,
+\\
+\underset{(h,T,d_k)}{Q}
 \underset{(h,d_k,T)}{K^\top}
-\rightarrow
+&\rightarrow
 \underset{(h,T,T)}{S},
-\qquad
-\mathrm{FLOPs}=2hT^2d_k.
+&\qquad \mathrm{FLOPs}&=2hT^2d_k.
+\end{aligned}
 $$
 
-Then compute the FLOPs of $O$, where $O=PV$ and $V=C^{KV}W_{UV}$:
+The shared latent projection $C^{KV}=XW_{DKV}$ costs $2Tdd_c$. The query projection costs $2Thdd_k$ without query compression, or $2Tdd_{qc}+2Thd_{qc}d_k$ with query compression.
 
-$$
-\underset{(T,d_c)}{C^{KV}}
-\underset{(h,d_c,d_v)}{W_{UV}}
-\rightarrow
-\underset{(T,h,d_v)}{V},
-\qquad
-\mathrm{FLOPs}=2Thd_cd_v.
-$$
+Once $V=C^{KV}W_{UV}$ has been reconstructed, the $V$ projection costs $2Thd_cd_v$, and the common $PV$ contraction costs $2hT^2d_v$. The final output projection, which is the same as in MHA, costs $2Thd_vd$.
 
-$$
-\underset{(h,T,T)}{P}
-\underset{(T,h,d_v)}{V}
-\rightarrow
-\underset{(T,h,d_v)}{O},
-\qquad
-\mathrm{FLOPs}=2hT^2d_v.
-$$
+This computation order is implementable at the kernel level. The most direct implementation materializes $K,V$ first and then calls a standard FlashAttention kernel. A more memory-efficient implementation computes $K,V$ from $C^{KV}$ inside each attention tile.
 
-This order is implementable at the kernel level. The most direct implementation materializes $K,V$ first and then calls a standard FlashAttention kernel; a more memory-saving implementation computes $K,V$ from $C^{KV}$ inside each attention tile.
-
-Without query compression, the causal-aware MLA prefill FLOPs are:
+Without query compression, the dense MLA prefill FLOPs are
 
 $$
 F_{\mathrm{MLA,prefill,noQ}}
@@ -279,58 +331,7 @@ F_{\mathrm{MLA,prefill,noQ}}
 +2Thd_vd.
 $$
 
-> If the implementation explicitly uses a causal mask, replace the middle attention term by $hT(T+1)(d_k+d_v)$.
-
-**With Query Compression.**
-
-With query compression, the full score expression becomes:
-
-$$
-S
-=
-QK^\top
-=
-\underset{(T,d)}{X}
-\underset{(d,d_{qc})}{W_{DQ}}
-\underset{(h,d_{qc},d_k)}{W_{UQ}}
-\underset{(h,d_k,d_c)}{W_{UK}^\top}
-\underset{(d_c,d)}{W_{DKV}^\top}
-\underset{(d,T)}{X^\top}.
-$$
-
-The attention output $O$ is unchanged:
-
-$$
-O=PV
-=
-\underset{(h,T,T)}{P}
-\underset{(T,d)}{X}
-\underset{(d,d_c)}{W_{DKV}}
-\underset{(h,d_c,d_v)}{W_{UV}}.
-$$
-
-The optimal computation order is:
-
-$$
-\underset{(T,d)}{X}
-\underset{(d,d_{qc})}{W_{DQ}}
-\rightarrow
-\underset{(T,d_{qc})}{C^Q},
-\qquad
-\mathrm{FLOPs}=2Tdd_{qc}
-\quad \text{shared across heads}.
-$$
-
-$$
-\underset{(T,d_{qc})}{C^Q}
-\underset{(h,d_{qc},d_k)}{W_{UQ}}
-\rightarrow
-\underset{(T,h,d_k)}{Q},
-\qquad
-\mathrm{FLOPs}=2Thd_{qc}d_k.
-$$
-
-The $C^{KV},K,V,S,O$ path is the same as the no-Q-compression case. With query compression, the non-causal-aware MLA prefill total FLOPs are:
+With query compression, they are
 
 $$
 F_{\mathrm{MLA,prefill,Qcomp}}
@@ -343,100 +344,78 @@ F_{\mathrm{MLA,prefill,Qcomp}}
 +2Thd_vd.
 $$
 
-> If the implementation explicitly uses a causal mask, replace the middle attention term by $hT(T+1)(d_k+d_v)$.
+For causal prefill or training, replace the common attention term $2hT^2(d_k+d_v)$ with $hT(T+1)(d_k+d_v)$.
 
-### Prefill Comparison
+### Decode Comparison
 
-From the formulas above, if both explicitly compute the same-shaped $QK^\top$ and $PV$, then MHA and MLA have the same quadratic attention FLOPs. In prefill, the real difference mainly comes from the linear projection part.
+Cached decode FLOPs consist of the current-token projections, the attention computation that scales with cache length $t$, the MLA-specific local transformations, and the final output projection.
 
-The MHA linear projection FLOPs are $2Tdh(2d_k+d_v)$. MLA without query compression costs $2Tdd_c+2Thdd_k+2Thd_c(d_k+d_v)$. MLA with query compression costs $2Tdd_c+2Tdd_{qc}+2Thd_{qc}d_k+2Thd_c(d_k+d_v)$.
+| Method | Current-token projection | Length-$t$ attention term | Remaining local terms |
+| --- | --- | --- | --- |
+| MHA | $2dh(2d_k+d_v)$ | $2ht(d_k+d_v)$ | $2hd_vd$ |
+| MLA without query compression | $2dd_c+2hdd_k$ | $4htd_c$ | $2hd_kd_c+2hd_cd_v+2hd_vd$ |
+| MLA with query compression | $2dd_c+2dd_{qc}+2hd_{qc}d_k$ | $4htd_c$ | $2hd_kd_c+2hd_cd_v+2hd_vd$ |
 
-Plugging in the DeepSeek-V2 attention configuration $d=5120,\ h=128,\ d_k=d_v=128,\ d_c=512,\ d_{qc}=1536$, the MHA linear projection cost is $503.3\text{M}T$, MLA without query compression is $206.6\text{M}T$, and MLA with query compression is $104.9\text{M}T$. That is, MLA no-Q is about $41.1\%$ of MHA, while MLA Q-compression is about $20.8\%$ of MHA.
+If we only look at FLOPs, MLA decode is not necessarily smaller than MHA. The MHA decode-length term is $2ht(d_k+d_v)$, while the MLA latent path uses $4htd_c$. Under the DeepSeek-V2 dimensions $d_k=d_v=128$ and $d_c=512$, the arithmetic work of the latter is not small.
 
-**MLA prefill does not reduce quadratic attention FLOPs, but it significantly reduces linear projection FLOPs; this is especially clear with query compression.** Under the DeepSeek-V2 configuration, MLA with query compression has only about $20.8\%$ of the MHA projection FLOPs.
+However, decode is usually memory-bound. MHA stores and reads the full per-head cache
+
+$$
+K_{\le t}:(h,t,d_k),
+\qquad
+V_{\le t}:(h,t,d_v),
+$$
+
+while MLA stores the shared latent $C^{KV}_{\le t}:(t,d_c),$
+
+plus a smaller decoupled RoPE cache.
+
+With $h=128,\ d_k=d_v=128,\ d_c=512$, the MHA KV cache contains $32768$ dimensions per token, while the MLA latent cache contains $512$ dimensions per token.
+
+Therefore, MLA decode acceleration mainly comes from **the cache change**: it replaces the full per-head KV reads and writes in long-context decode with shared-latent cache reads and writes. The additional FLOPs are moved into smaller computations that can be executed inside fused kernels.
 
 ### MHA Decode
 
-With KV cache, historical $K_{\le t},V_{\le t}$ have already been computed in previous decode steps. The current step only needs to compute and append the new $q,k,v$:
+With KV cache, historical $K_{\le t},V_{\le t}$ have already been computed in previous decode steps. The current step only computes and appends the new $q,k,v$. Across all heads, the current-token projection cost is $2dh(2d_k+d_v)$.
+
+
+The computation order is determined by the cache: first generate $q,k,v$ from the current token $x$, append $k,v$ to the cache, and then use only the current $q$ to read historical $K_{\le t}$.
+
+The score and value contractions are
 
 $$
-\underset{(1,d)}{x}
-\underset{(h,d,d_k)}{W_Q}
-\rightarrow
-\underset{(1,h,d_k)}{q},
-\qquad
-\underset{(1,d)}{x}
-\underset{(h,d,d_k)}{W_K}
-\rightarrow
-\underset{(1,h,d_k)}{k},
-\qquad
-\underset{(1,d)}{x}
-\underset{(h,d,d_v)}{W_V}
-\rightarrow
-\underset{(1,h,d_v)}{v}.
-$$
-
-Across all heads, the current-token projection cost is: $F_{qkv}=2dh(2d_k+d_v).$
-
-$$
-\underset{(1,d)}{x}
-\underset{(h,d,d_k)}{W_Q,W_K}
-\rightarrow
-\underset{(1,h,d_k)}{q,k},
-\qquad
-\underset{(1,d)}{x}
-\underset{(h,d,d_v)}{W_V}
-\rightarrow
-\underset{(1,h,d_v)}{v}.
-$$
-
-The computation order here is determined by KV cache: first generate $q,k,v$ from the current token $x$, append $k,v$ to the cache, and then use only the current $q$ to read historical $K_{\le t}$ and compute scores. In this way, decode-length multiplications happen in dimensions $d_k,d_v$, rather than reprocessing the whole $X_{\le t}$ from hidden dimension $d$.
-
-Then attention reads cached $K,V$:
-
-$$
-score=qK_{\le t}^\top,\qquad o=pV_{\le t}.
-$$
-
-$$
-\underset{(1,h,d_k)}{q}
+\underset{(h,1,d_k)}{q}
 \underset{(h,d_k,t)}{K_{\le t}^\top}
 \rightarrow
-\underset{(1,h,t)}{score},
+\underset{(h,1,t)}{\mathrm{score}},
 \qquad
-\mathrm{FLOPs}=2htd_k.
+\mathrm{FLOPs}=2htd_k,
 $$
 
 $$
-\underset{(1,h,t)}{p}
-\underset{(t,h,d_v)}{V_{\le t}}
+\underset{(h,1,t)}{p}
+\underset{(h,t,d_v)}{V_{\le t}}
 \rightarrow
-\underset{(1,h,d_v)}{o},
+\underset{(h,1,d_v)}{o},
 \qquad
 \mathrm{FLOPs}=2htd_v.
 $$
 
-$$
-\underset{(1,h,d_v)}{o}
-\underset{(h,d_v,d)}{W_o}
-\rightarrow
-\underset{(1,d)}{y},
-\qquad
-\mathrm{FLOPs}=2hd_vd.
-$$
+The common output projection costs $2hd_vd$. Therefore, the cached MHA decode FLOPs are
 
-So the cached decode FLOPs are: $F_{\mathrm{MHA,decode,cached}}=
+$$
+F_{\mathrm{MHA,decode,cached}}
+=
 2dh(2d_k+d_v)
 +2ht(d_k+d_v)
-+2hd_vd .$
++2hd_vd.
+$$
 
 ### MLA Decode
 
-For MLA decode, the cache stores the shared latent cache instead of full per-head $K,V$. At the current step, we append one new latent vector:
+For MLA decode, the cache stores the shared latent instead of full per-head $K,V$. At the current step,
 
 $$
-\underset{(t,d_c)}{C^{KV}_{\le t}},
-\qquad
 \underset{(1,d)}{x}
 \underset{(d,d_c)}{W_{DKV}}
 \rightarrow
@@ -445,121 +424,74 @@ $$
 \mathrm{FLOPs}=2dd_c.
 $$
 
-Therefore the current-token linear projection cost is explicitly included in decode. Without query compression:
+The new $c^{KV}$ is appended to $C^{KV}_{\le t}:(t,d_c)$. Without query compression, the current-token projection cost is $2dd_c+2hdd_k$. With query compression, it is $2dd_c+2dd_{qc}+2hd_{qc}d_k$.
+
+The complete score expressions are
 
 $$
-F_{\mathrm{MLA,current,noQ}}=2dd_c+2hdd_k.
-$$
-
-With query compression:
-
-$$
-F_{\mathrm{MLA,current,Qcomp}}=2dd_c+2dd_{qc}+2hd_{qc}d_k.
-$$
-
-MLA decode does not need to append full $k,v$ separately; what is actually written into cache is the shared $c^{KV}$ latent, while $K,V$ are reconstructed or absorbed only when attention needs them.
-
-The full score and value expressions are below. I keep the two variants, MLA without query compression and MLA with query compression. They differ mainly in the current-token query path, while the latent-cache attention path is shared.
-
-$$
-\begin{aligned}
-score_{\mathrm{noQ}}
-&=
+\mathrm{score}_{\mathrm{noQ}}
+=
 \underset{(1,d)}{x}
 \underset{(h,d,d_k)}{W_Q}
 \underset{(h,d_k,d_c)}{W_{UK}^\top}
 \underset{(d_c,t)}{(C^{KV}_{\le t})^\top},
-\\
-score_{\mathrm{Qcomp}}
-&=
+$$
+
+$$
+\mathrm{score}_{\mathrm{Qcomp}}
+=
 \underset{(1,d)}{x}
 \underset{(d,d_{qc})}{W_{DQ}}
 \underset{(h,d_{qc},d_k)}{W_{UQ}}
 \underset{(h,d_k,d_c)}{W_{UK}^\top}
-\underset{(d_c,t)}{(C^{KV}_{\le t})^\top},
-\\
-o
-&=
-\underset{(1,h,t)}{p}
-\underset{(t,d_c)}{C^{KV}_{\le t}}
-\underset{(h,d_c,d_v)}{W_{UV}}.
-\end{aligned}
+\underset{(d_c,t)}{(C^{KV}_{\le t})^\top}.
 $$
 
-For input query $x$, cached execution first constructs the current query. Without query compression:
+**Decode score order: use $(qW_{UK}^\top)(C^{KV}_{\le t})^\top$, not $q(C^{KV}_{\le t}W_{UK})^\top$.**
 
-$$
-\underset{(1,d)}{x}
-\underset{(h,d,d_k)}{W_Q}
-\rightarrow
-\underset{(1,h,d_k)}{q},
-\qquad
-\mathrm{FLOPs}=2hdd_k.
-$$
-
-With query compression, the computation of $q$ is factorized as:
+Both variants first absorb $W_{UK}^\top$ into the current query, then multiply by the latent cache:
 
 $$
 \begin{aligned}
-\underset{(1,d)}{x}
-\underset{(d,d_{qc})}{W_{DQ}}
-\rightarrow
-\underset{(1,d_{qc})}{c^Q},
-\qquad
-&\mathrm{FLOPs}=2dd_{qc}
-\quad \text{shared across heads},
-\\
-\underset{(1,d_{qc})}{c^Q}
-\underset{(h,d_{qc},d_k)}{W_{UQ}}
-\rightarrow
-\underset{(1,h,d_k)}{q},
-\qquad
-&\mathrm{FLOPs}=2hd_{qc}d_k.
-\end{aligned}
-$$
-
-After that, both variants use the same cached attention path. On the score side, the order is to first absorb $W_{UK}^\top$ into the current query to get $q_{\mathrm{abs}}=qW_{UK}^\top$, and then multiply it by the latent cache. This makes $W_{UK}$ act only on the length-$1$ current token, instead of on the length-$t$ whole cache. The value side follows the same principle: first compute $z=pC^{KV}_{\le t}$ to get a latent weighted sum, and then multiply by $W_{UV}$, rather than reconstructing full $V$ for all cached tokens first.
-
-$$
-\begin{aligned}
-\underset{(1,h,d_k)}{q}
+\underset{(h,1,d_k)}{q}
 \underset{(h,d_k,d_c)}{W_{UK}^\top}
 &\rightarrow
-\underset{(1,h,d_c)}{q_{\mathrm{abs}}},
-\qquad
-\mathrm{FLOPs}=2hd_kd_c,
+\underset{(h,1,d_c)}{q_{\mathrm{abs}}},
+&\qquad \mathrm{FLOPs}&=2hd_kd_c,
 \\
-\underset{(1,h,d_c)}{q_{\mathrm{abs}}}
+\underset{(h,1,d_c)}{q_{\mathrm{abs}}}
 \underset{(d_c,t)}{(C^{KV}_{\le t})^\top}
 &\rightarrow
-\underset{(1,h,t)}{score},
-\qquad
-\mathrm{FLOPs}=2htd_c,
-\\
-\underset{(1,h,t)}{p}
-\underset{(t,d_c)}{C^{KV}_{\le t}}
-\underset{(h,d_c,d_v)}{W_{UV}}
-&\rightarrow
-\underset{(1,h,d_v)}{o},
-\qquad
-\mathrm{FLOPs}=2htd_c + 2hd_cd_v.
+\underset{(h,1,t)}{\mathrm{score}},
+&\qquad \mathrm{FLOPs}&=2htd_c.
 \end{aligned}
 $$
 
-The output projection is the same as MHA:
+This applies $W_{UK}$ only to the current query, not all $t$ cached latents.
+
+**Decode value order: use $(pC^{KV}_{\le t})W_{UV}$, not $p(C^{KV}_{\le t}W_{UV})$.**
+
+First form the latent weighted sum, then apply $W_{UV}$:
 
 $$
-\underset{(1,h,d_v)}{o}
-\underset{(h,d_v,d)}{W_o}
+\underset{(h,1,t)}{p}
+\underset{(t,d_c)}{C^{KV}_{\le t}}
+\underset{(h,d_c,d_v)}{W_{UV}}
 \rightarrow
-\underset{(1,d)}{y},
-\qquad
-\mathrm{FLOPs}=2hd_vd.
+\underset{(h,1,d_v)}{o},
 $$
 
-So the cached all-head decode attention FLOPs are: $F_{\mathrm{MLA,decode,attn}}=2hd_kd_c+4htd_c+2hd_cd_v.$
+This costs $2htd_c+2hd_cd_v$ and avoids reconstructing $V$ for all cached tokens.
 
-For the whole MLA decode layer:
+The common output projection costs $2hd_vd$. Therefore, the cached all-head MLA attention FLOPs are
+
+$$
+F_{\mathrm{MLA,decode,attn}}
+=
+2hd_kd_c+4htd_c+2hd_cd_v.
+$$
+
+For the whole MLA decode layer,
 
 $$
 \begin{aligned}
@@ -580,41 +512,13 @@ F_{\mathrm{MLA,decode,cached,Qcomp}}
 +2hd_kd_c
 +4htd_c
 +2hd_cd_v
-+2hd_vd .
++2hd_vd.
 \end{aligned}
 $$
 
-Here $4htd_c$ is the decode-length part: one $2htd_c$ reads the latent cache to compute scores, and the other $2htd_c$ reads the latent cache again to compute the weighted latent value. This order is implementable at the kernel level: a fused MLA decode kernel can compute $q_{\mathrm{abs}}$, stream the cache blocks of $C^{KV}_{\le t}$, run online softmax, accumulate $z^s=p^sC^{KV}_{\le t}$, and finally multiply by $W_{UV}^s$.
+Here $4htd_c$ is the decode-length part: one $2htd_c$ term computes the scores from the latent cache, and the other computes the weighted latent value.
 
-### Decode Comparison
-
-Putting the MHA and MLA decode formulas side by side, MHA cached decode is:
-
-$$
-F_{\mathrm{MHA,decode,cached}}
-=
-2dh(2d_k+d_v)
-+2ht(d_k+d_v)
-+2hd_vd.
-$$
-
-MLA without query compression is:
-
-$$
-F_{\mathrm{MLA,decode,cached,noQ}}
-=
-2dd_c
-+2hdd_k
-+2hd_kd_c
-+4htd_c
-+2hd_cd_v
-+2hd_vd.
-$$
-
-If we only look at FLOPs, MLA decode is not necessarily smaller than MHA. For the decode-length terms, MHA has $2ht(d_k+d_v)$, while the MLA latent path has $4htd_c$. Under DeepSeek-V2 dimensions $d_k=d_v=128,\ d_c=512$, the arithmetic work of the latter is not small. But decode is usually memory-bound. MHA needs to store and read full per-head cache for each cached token: $K_{\le t}:(t,h,d_k),\quad V_{\le t}:(t,h,d_v),$ so the cache size per token is roughly $h(d_k+d_v)$. MLA stores the shared latent: $C^{KV}_{\le t}:(t,d_c),$ plus a smaller decoupled RoPE cache. Plugging in $h=128,\ d_k=d_v=128,\ d_c=512$, the full MHA KV cache is $32768$ dimensions per token, while the MLA latent cache is $512$ dimensions. Even if MLA does extra work inside the kernel for $q_{\mathrm{abs}}$, latent scores, and latent values, it avoids repeatedly reading full per-head $K,V$ from GPU memory.
-
-So MLA decode acceleration mainly comes from **the cache change**: it replaces the heaviest full-KV reads and writes in long-context decode with shared-latent cache reads and writes. FLOPs are shifted into smaller computations that fit fused kernels better; in this part, MLA is essentially trading computation for memory.
-
+This order is implementable at the kernel level. A fused MLA decode kernel can compute $q_{\mathrm{abs}}$, stream the cache blocks of $C^{KV}_{\le t}$, run online softmax, accumulate $pC^{KV}_{\le t}$, and finally multiply by $W_{UV}$.
 ## Why RoPE Gets in the Way
 
 MLA's absorption trick has an implicit prerequisite: the map from latent cache to key is fixed across positions. Without RoPE, for cached token $i$:
@@ -688,7 +592,11 @@ $$
 
   When $d_{qc}(d+hd_k)<hdd_k$, Q compression reduces query-projection FLOPs. Under DeepSeek-V2 dimensions, $F_Q=167.8\text{M}T$, while $F_{Q,\mathrm{comp}}=66.1\text{M}T$. This also explains why the previous prefill comparison shows a clear gap between MLA no-Q and MLA Q-compression.
 
-- **Decode.** Q compression only affects the current-token query path; it does not reduce the latent cache-length term by itself. The score path is:
+  - **Decode.** Q compression only affects the current-token query path; it does not reduce the latent cache-length term by itself.
+
+    **Query-side order: use $(c^QW_{UQ})W_{UK}^\top$, not $c^Q(W_{UQ}W_{UK}^\top)$.**
+
+    The score path is:
 
   $$
   \underset{(1,d)}{x}
@@ -698,23 +606,23 @@ $$
   \underset{(d_c,t)}{(C_{\le t}^{KV})^\top}.
   $$
 
-  In actual implementations, it usually still goes through the smaller per-head bottleneck $d_k$. The score-side cost is:
+  Implementations usually keep the smaller per-head bottleneck $d_k$. Excluding the shared $x \to c^Q$ step, the all-head score cost is:
 
   $$
-  2d_{qc}d_k+2d_kd_c+2td_c
+  2h(d_{qc}d_k+d_kd_c+td_c)
   \quad
   \text{instead of}
   \quad
-  2d_{qc}d_c+2td_c .
+  2h(d_{qc}d_c+td_c) .
   $$
 
   Since $d_k$ is much smaller than $d_c$ and $d_{qc}$, the two-step path is usually cheaper.
 
 **Q compression saves activation memory and may also save prefill projection FLOPs, but it changes decode compute only modestly; KV compression is still the main decode-cache bandwidth win.**
 
-## Why MTP Weakens MLA's Decode Acceleration Gain
+## Why MLA Weakens MTP's Speculative-Decoding Gain: A Roofline View
 
-![MTP](MTP.png)
+![MTP](./MTP.png)
 
 The [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437) uses MTP as an additional training objective. For prediction depth $k$, the MTP module concatenates the previous-depth representation and a shifted token embedding:
 
@@ -737,19 +645,21 @@ $$
 P_{i+k+1}^{k}=\operatorname{OutHead}(h_i^k).
 $$
 
-During normal inference, DeepSeek-V3 can directly discard these MTP modules, so the MLA decode path is not affected by MTP. The real issue appears when we repurpose MTP modules for speculative decoding: the MTP path first drafts several future tokens, and then the main model verifies them.
+During normal inference, DeepSeek-V3 can directly discard these MTP modules, so the MLA decode path is not affected by MTP. The interesting question appears when we repurpose MTP for speculative decoding: MTP drafts $D$ future tokens, and the main model verifies them in one pass. The naive expectation is that MLA (memory savings) and speculative decoding (compute batching) simply stack. They do not. The correct comparison is not "MTP on MLA vs plain MLA", but "MTP on MHA vs MTP on MLA" — and once we look at it through a roofline lens, we see why MLA changes the game.
 
-First consider the gain from plain MLA. The decode acceleration derived above mainly comes from changing the cache format of the main decode path: normal MHA reads roughly $h(d_k+d_v)$ cached $K,V$ values per token, while MLA mainly reads a $d_c$-dimensional latent cache, plus a smaller decoupled RoPE part. With DeepSeek-V2/V3-style dimensions, $h(d_k+d_v)=128(128+128)=32768$, while $d_c=512$. Roughly speaking, the MLA gain is:
+### Why Speculative Decoding Works on MHA
 
-$$
-G_{\mathrm{MLA}}
-=
-F_{\mathrm{MHA,decode}}
--
-F_{\mathrm{MLA,decode}} .
-$$
+MHA decode is deeply memory-bound. Per generated token, the model reads a full $h(d_k+d_v)$-dimensional KV cache from HBM once, then does a relatively small amount of arithmetic on it. With DeepSeek-V2/V3-style dimensions, $h(d_k+d_v)=128(128+128)=32768$ per token. On any modern GPU this sits well below the roofline ridge (typically $\sim 281$ FLOP/byte in bf16), so the compute units spend most of each decode step waiting for the cache to arrive.
 
-After introducing MTP for speculative decoding, the cost of generating a group of accepted tokens is no longer just $F_{\mathrm{MLA,decode}}$. It becomes the draft cost plus the verification cost. If we draft $D$ tokens and finally accept $A$ tokens, the average cost per accepted token is roughly:
+Speculative decoding exploits this imbalance. When you verify $D$ drafted tokens in one forward pass, you do NOT pay for $D\times$ the KV bandwidth: the KV cache has already been read for the current-token verification, and each additional token just does another matmul against the same weights that are already on-chip. The marginal cost per speculation token is small — you are using compute that would otherwise sit idle. This is the real reason speculative decoding accelerates MHA decode: not by reducing the amount of work, but by moving previously idle compute into useful work.
+
+### Why This No Longer Works on MLA
+
+MLA compresses the KV cache per token from $h(d_k+d_v)=32768$ down to $d_c=512$ — a $\sim 64\times$ reduction in bytes moved per decode step. But queries stay per-head: each of the $h$ heads must load its own copy of the shared latent to compute its own dot product. The ratio $m_q / m_c$ climbs to $h=128$ (see Fergus Finn's ["Economics of Speculative Decoding"](https://fergusfinn.com/blog/economics-of-speculative-decoding/)). Arithmetic intensity — FLOPs per byte moved — rises together.
+
+The consequence is sharp: even a modest number of speculation tokens (e.g., $D=2$) is enough to push MLA decode past the roofline ridge into the compute-bound regime on typical GPUs. Once decode is compute-bound, verifying an extra speculation token is no longer close to free — the compute cost grows nearly proportionally with $D$. The same cache compression that makes MLA efficient is what removes the memory-bound headroom speculative decoding needs. On MLA, MTP and the main decode are contending for the same compute resource.
+
+Concretely, the average per-accepted-token cost of MTP on top of MLA is:
 
 $$
 \bar F_{\mathrm{MTP}}
@@ -759,7 +669,7 @@ F_{\mathrm{draft}}(1{:}D)+F_{\mathrm{verify}}(D)
 }{A}.
 $$
 
-For MTP not to eat away the original MLA gain, this average cost should not be much larger than plain MLA decode. A stronger condition, if we want MTP to further accelerate decode on top of MLA, is:
+For MTP to further accelerate decode on top of MLA, we would need:
 
 $$
 F_{\mathrm{draft}}(1{:}D)+F_{\mathrm{verify}}(D)
@@ -767,7 +677,7 @@ F_{\mathrm{draft}}(1{:}D)+F_{\mathrm{verify}}(D)
 A\cdot F_{\mathrm{MLA,decode}}.
 $$
 
-The problem is that the MTP draft path is not free. The $k$-th draft depth at least contains a fusion projection, an extra $\operatorname{TRM}_k$ block, and the output head:
+MLA has shrunk the right-hand side (main decode is cheap now), but it has NOT shrunk the left. The MTP draft path costs the same:
 
 $$
 F_{\mathrm{draft}}(k)
@@ -777,8 +687,12 @@ F_{\mathrm{draft}}(k)
 +2dV.
 $$
 
-Here $4d^2$ comes from projecting $[h^{k-1};\operatorname{Emb}]$ from $2d$ back to $d$, $F_{\operatorname{TRM}_k,\mathrm{decode}}^{\mathrm{MLA}}$ is the extra decode cost of the MTP Transformer block, and $2dV$ is the shared output-head cost for full logits.
+Here $4d^2$ comes from projecting $[h^{k-1};\operatorname{Emb}]$ from $2d$ back to $d$, $F_{\operatorname{TRM}_k,\mathrm{decode}}^{\mathrm{MLA}}$ is the extra decode cost of the MTP Transformer block, and $2dV$ is the shared output-head cost for full logits. And the verify pass now sits in the compute-bound regime, so its cost grows almost linearly in $D$ rather than being amortized by cache reuse.
 
-The key point is simple: $\operatorname{TRM}_k$ runs on a shifted hidden stream $h^k$, whose hidden states and token alignment differ from the main model. So it cannot directly reuse the main $C^{KV}$ cache. If the MTP block also uses MLA internally, it needs its own latent cache for this stream.
+There is a second, subtler cost. $\operatorname{TRM}_k$ runs on a shifted hidden stream $h^k$, whose token alignment differs from the main model — so it cannot directly reuse the main $C^{KV}$ cache. If the MTP block also uses MLA internally, it maintains its own latent cache for this stream. MLA's savings on the main path do not automatically extend to the draft path either.
 
-Therefore, **MTP weakens MLA's decode-stage acceleration gain**. MLA reduces cache traffic on the main decode path, but MTP adds a draft stream, verification cost, and shifted latent states that cannot directly reuse the main cache. From the FLOPs/cache perspective, these extra costs spend part of MLA's gain.
+### Summary
+
+Speculative decoding accelerates MHA decode because MHA decode is memory-bound: verification cycles that would otherwise sit idle can be filled by drafted tokens at almost no additional cost. MLA changes the operating point. By compressing the KV cache by $\sim 64\times$ and raising arithmetic intensity by a factor of $h$, MLA pushes decode close to (or past) the roofline ridge, into the compute-bound regime. There, every speculation token has to pay its full compute cost. **MLA and MTP are not independent accelerations — they draw from the same pool of compute, and MLA has already consumed most of it.**
+
+This is not an argument against combining them; DeepSeek-V3 clearly still benefits from MTP as a training objective. It is an argument for calibrating expectations: on top of MLA, MTP-based speculative decoding delivers a much smaller speedup than it does on top of MHA.
