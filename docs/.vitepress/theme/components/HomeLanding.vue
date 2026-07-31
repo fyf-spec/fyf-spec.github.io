@@ -93,18 +93,6 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="notes" class="home-section home-container" aria-labelledby="notes-title" data-home-reveal>
-      <h2 id="notes-title">Notes</h2>
-      <div class="home-index-list home-notes-list">
-        <a v-for="section in noteSections" :key="section.link" :href="section.link" class="home-index-row">
-          <strong>{{ section.title }}</strong>
-          <span>{{ section.label }}</span>
-          <span>{{ section.countLabel }}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-        </a>
-      </div>
-    </section>
-
     <section class="home-section home-container" aria-labelledby="recent-writing-title" data-home-reveal>
       <h2 id="recent-writing-title">Recent writing</h2>
       <div class="home-index-list home-writing-list">
@@ -112,6 +100,18 @@ onBeforeUnmount(() => {
           <strong>{{ post.title }}</strong>
           <time :datetime="post.date">{{ post.date }}</time>
           <span>{{ post.category === "technical" ? "Technical" : post.category === "reflection" ? "Reflection" : "Article" }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+    </section>
+
+    <section id="notes" class="home-section home-container" aria-labelledby="notes-title" data-home-reveal>
+      <h2 id="notes-title">Notes</h2>
+      <div class="home-index-list home-notes-list">
+        <a v-for="section in noteSections" :key="section.link" :href="section.link" class="home-index-row">
+          <strong>{{ section.title }}</strong>
+          <span>{{ section.label }}</span>
+          <span>{{ section.countLabel }}</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
         </a>
       </div>

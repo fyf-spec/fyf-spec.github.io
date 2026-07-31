@@ -58,6 +58,36 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
+    title: "DSA 之后：Indexer 优化的两条路线",
+    link: "/blogs/dsa-indexer-optimization/dsa-indexer-optimization",
+    date: "2026-07-31",
+    category: "technical",
+    subtitle: "从 index score 的冗余模式，到重新设计候选生成器。",
+    image: "/blogs/dsa-indexer-optimization/images/route-layer-23.png",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/dsa-indexer-optimization/dsa-indexer-optimization",
+        title: "DSA 之后：Indexer 优化的两条路线"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/dsa-indexer-optimization/dsa-indexer-optimization-en",
+        title: "After DSA: Two Routes to a Better Indexer"
+      }
+    ]
+  },
+  {
+    title: "DeepSeek DSA FLOPs",
+    link: "/blogs/DSA-flops/DSA_flops_notes_zh",
+    date: "2026-07-28",
+    category: "technical",
+    subtitle: "沿用 MLA 的计数口径，推导 DSA 核心稀疏注意力与 Lightning Indexer 的 prefill、training 和 decode FLOPs。",
+    image: ""
+  },
+  {
     title: "Linear Attention: From DeltaNet to KDA",
     link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda",
     date: "2026-07-18",
