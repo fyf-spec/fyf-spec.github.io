@@ -13,7 +13,7 @@ $$ I_{t,s}=\sum_{j=1}^{H_I}w^I_{t,j}\operatorname{ReLU}\!\left(q^I_{t,j}\cdot k^
 
 其中 $H_I$ 是 indexer head 数，$q^I_{t,j}$ 和 $k^I_s$ 是低维 indexing query/key，$w^I_{t,j}$ 决定各个 head 对当前 query 的贡献。
 
-这比直接运行完整 attention 便宜得多，但它仍然包含一个无法绕开的动作：**每个 query 先扫描所有历史 token。**如果序列长度为 $L$，主注意力已经从 $O(L^2)$ 降到 $O(Lk)$，indexer 却仍会产生 $O(L^2)$ 次 query-key score。随着 Sparse MLA 越来越快，indexer 反而会从一个“小配件”变成新的主耗时。这也构成了我理解 DSA 后续工作的起点：
+这比直接运行完整 attention 便宜得多，但它仍然包含一个无法绕开的动作：**每个 query 先扫描所有历史 token。** 如果序列长度为 $L$，主注意力已经从 $O(L^2)$ 降到 $O(Lk)$，indexer 却仍会产生 $O(L^2)$ 次 query-key score。随着 Sparse MLA 越来越快，indexer 反而会从一个“小配件”变成新的主耗时。这也构成了我理解 DSA 后续工作的起点：
 
 > 如果 indexer 的职责是帮助 attention 少看一些 token，那么 indexer 自己能不能也少看一些？
 
@@ -22,7 +22,6 @@ $$ I_{t,s}=\sum_{j=1}^{H_I}w^I_{t,j}\operatorname{ReLU}\!\left(q^I_{t,j}\cdot k^
 1. **从 index score pattern 出发。** 先观察完整 index score 或 top-$k$ 结果在哪些维度存在冗余，再让原有 indexer 少算、少选或复用已有结果。
 2. **从 indexer architecture 出发。** 不再假定“低维 query 与全部 key 做一次平坦扫描”是唯一形式，而是重新设计候选生成、训练监督和系统执行路径。
 
-这两个类别是一种理解框架，并非互斥标签。有些工作同时利用数据模式和架构设计，但它们首先改变的对象不同：前者主要压缩已有 score tensor 的某个轴，后者主要改变 score 或候选集合的生成机制。
 
 ## 从 score pattern 中寻找冗余
 
@@ -85,7 +84,7 @@ DSA 使用多个 indexer heads，是因为不同低维子空间可能捕捉不�
 
 $$ E_{t,j}=\frac{1}{M}\sum_b\left|w^I_{t,j}\operatorname{ReLU}\!\left(q^I_{t,j}\cdot\widetilde k^I_b\right)\right| $$
 
-这里最关键的技巧是：**head router 不能只看 gate $w_{t,j}$ 或 query norm，而必须让每个 head 先与历史的 block summaries 发生一次便宜交互。**只看 query 只能说明某个 head 自身“声音大不大”，无法判断当前前缀里是否真的存在它擅长匹配的内容；$E_{t,j}$ 同时看 query、gate 和历史摘要，才是在估计这个 head 对本次检索是否有用。选出 top-$h$ 后，只有这些 heads 扫描完整 token 序列。更保守的 MISA$^\dagger$ 则先让少数 heads 召回较大的 $k'$ 候选集，再用全部 heads 在候选内恢复完整 DSA 排序。
+这里最关键的技巧是：**head router 不能只看 gate $w_{t,j}$ 或 query norm，而必须让每个 head 先与历史的 block summaries 发生一次便宜交互。** 只看 query 只能说明某个 head 自身“声音大不大”，无法判断当前前缀里是否真的存在它擅长匹配的内容；$E_{t,j}$ 同时看 query、gate 和历史摘要，才是在估计这个 head 对本次检索是否有用。选出 top-$h$ 后，只有这些 heads 扫描完整 token 序列。更保守的 MISA$^\dagger$ 则先让少数 heads 召回较大的 $k'$ 候选集，再用全部 heads 在候选内恢复完整 DSA 排序。
 
 它与 HISA 的区别非常清楚：
 

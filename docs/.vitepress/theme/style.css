@@ -883,6 +883,18 @@ html.page-ready .page-fade {
   box-shadow: none;
 }
 
+.vp-doc .architecture-figure {
+  border-radius: var(--fyf-radius-md);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.vp-doc .architecture-figure img {
+  display: block;
+  margin: 0;
+  width: 100%;
+}
+
 .vp-doc div[class*="language-"] {
   background: var(--fyf-surface-muted);
   border: 1px solid var(--fyf-border);
@@ -1169,6 +1181,11 @@ html.page-ready .page-fade {
 @media (max-width: 640px) {
   :root {
     --vp-nav-height: 56px;
+  }
+
+  .vp-doc .architecture-figure img {
+    max-width: none;
+    width: 720px;
   }
 
   .VPNavBar .container,
