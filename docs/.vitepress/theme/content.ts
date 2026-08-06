@@ -58,8 +58,30 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
-    title: "DSA 之后：Indexer 优化的两条路线",
-    link: "/blogs/dsa-indexer-optimization/dsa-indexer-optimization",
+    title: "From Heuristic Learning to Auto-Architecture Search",
+    link: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search-en",
+    date: "2026-08-05",
+    category: "reflection",
+    subtitle: "从积累外部启发式规则，到让研究系统参与改进模型架构本身。",
+    image: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search-v2.png",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search",
+        title: "从 Heuristic Learning 到 Auto-Architecture Search"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search-en",
+        title: "From Heuristic Learning to Auto-Architecture Search"
+      }
+    ]
+  },
+  {
+    title: "After DSA: Two Routes to a Better Indexer",
+    link: "/blogs/dsa-indexer-optimization/dsa-indexer-optimization-en",
     date: "2026-07-31",
     category: "technical",
     subtitle: "从 index score 的冗余模式，到重新设计候选生成器。",
@@ -89,7 +111,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     title: "Linear Attention: From DeltaNet to KDA",
-    link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda",
+    link: "/blogs/linear-attention-deltanet-kda/linear-attention-deltanet-kda-en",
     date: "2026-07-18",
     category: "technical",
     subtitle: "从固定状态线性注意力出发，推导 DeltaNet、Parallel DeltaNet、Gated DeltaNet、KDA 与 Gated DeltaNet-2。",
@@ -111,7 +133,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     title: "Singular Values and Spectral Decomposition",
-    link: "/blogs/singular-values-spectrum/singular-values-spectrum",
+    link: "/blogs/singular-values-spectrum/singular-values-spectrum-en",
     date: "2026-07-12",
     category: "technical",
     subtitle: "从方向伸缩出发，理解奇异值谱、低秩近似、谱分解与谱范数。",
