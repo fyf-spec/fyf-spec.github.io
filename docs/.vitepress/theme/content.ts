@@ -58,14 +58,6 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
-    title: "K3's KDA Precision Problem: From the Decay Lower Bound to Tensor Core Utilization",
-    link: "/blogs/k3-kda-precision/k3-kda-precision-en",
-    date: "2026-08-07",
-    category: "technical",
-    subtitle: "How split-exponent range, diagonal tiles, finite Neumann inverses, and an H200 benchmark converge on a 16-token tile.",
-    image: ""
-  },
-  {
     title: "From Heuristic Learning to Auto-Architecture Search",
     link: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search-en",
     date: "2026-08-05",
