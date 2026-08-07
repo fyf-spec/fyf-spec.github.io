@@ -58,6 +58,28 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
+    title: "K3's KDA Precision Problem: Why Lower-Bounded Decay Is Necessary",
+    link: "/blogs/k3-kda-decay-tensor-core/k3-kda-decay-tensor-core-en",
+    date: "2026-08-06",
+    category: "technical",
+    subtitle: "How decay bounds and 16-token tiles jointly control split-exponent range, Neumann inversion, and Tensor Core coverage.",
+    image: "",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/k3-kda-decay-tensor-core/k3-kda-decay-tensor-core",
+        title: "K3 的 KDA 精度问题：为什么要有 lower-bound decay"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/k3-kda-decay-tensor-core/k3-kda-decay-tensor-core-en",
+        title: "K3's KDA Precision Problem: Why Lower-Bounded Decay Is Necessary"
+      }
+    ]
+  },
+  {
     title: "From Heuristic Learning to Auto-Architecture Search",
     link: "/blogs/heuristic-learning-auto-architecture-search/heuristic-learning-auto-architecture-search-en",
     date: "2026-08-05",
