@@ -58,6 +58,28 @@ export const noteSections: NoteSection[] = [
 // Keep one catalog entry per article. Translations belong in `languages`, never as duplicate rows.
 export const blogPosts: BlogPost[] = [
   {
+    title: "Sparse Linear Attention: Viewing SWA from the Perspective of Linear Attention",
+    link: "/blogs/raven-swa-linear-attention/raven-swa-linear-attention-en",
+    date: "2026-08-09",
+    category: "technical",
+    subtitle: "Understanding SWA, state-based linear attention, and Raven through memory slots, FIFO, and sparse routing.",
+    image: "/blogs/raven-swa-linear-attention/raven-routing-overview.png",
+    languages: [
+      {
+        code: "zh-CN",
+        label: "中文",
+        link: "/blogs/raven-swa-linear-attention/raven-swa-linear-attention",
+        title: "Sparse Linear Attention：从 Linear Attention 角度看 SWA"
+      },
+      {
+        code: "en-US",
+        label: "English",
+        link: "/blogs/raven-swa-linear-attention/raven-swa-linear-attention-en",
+        title: "Sparse Linear Attention: Viewing SWA from the Perspective of Linear Attention"
+      }
+    ]
+  },
+  {
     title: "K3's KDA Precision Problem: Why Lower-Bounded Decay Is Necessary",
     link: "/blogs/k3-kda-decay-tensor-core/k3-kda-decay-tensor-core-en",
     date: "2026-08-06",
